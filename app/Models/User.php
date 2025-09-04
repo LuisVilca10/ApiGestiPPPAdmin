@@ -4,14 +4,17 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
+    use SoftDeletes;
+    protected $guard_name = 'api';
     /**
      * The attributes that are mass assignable.
      *
@@ -19,6 +22,9 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'last_name',
+        'code',
+        'username',
         'email',
         'password',
     ];
