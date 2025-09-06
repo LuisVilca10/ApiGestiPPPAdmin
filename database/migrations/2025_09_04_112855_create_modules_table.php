@@ -21,9 +21,8 @@ return new class extends Migration
             $table->boolean('status');
             $table->integer('moduleOrder');
             $table->string('link', 500);
-            $table->uuid('parent_module_id');
+            $table->unsignedBigInteger('parent_module_id');
             $table->foreign('parent_module_id')->references('id')->on('parent_modules')->onDelete('cascade');
-
             $table->timestamps();
             $table->softDeletes();
         });
