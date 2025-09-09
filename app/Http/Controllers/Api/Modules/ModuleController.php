@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Modules;
 
 use App\Models\Module;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -58,7 +59,7 @@ class ModuleController
     public function menu()
     {
         $user = auth('api')->user();
-  
+
         Log::info("Usuario autenticado:", ['user' => $user ? $user->id : null]);
 
         if ($user) {
@@ -133,5 +134,110 @@ class ModuleController
         // Log::info("Menú formateado, listo para enviar.");
 
         return response()->json($user);
+    }
+
+    public function store(Request $request)
+    {
+        $request->merge([
+            'parent_module_id' => $request->input('parentModuleId')
+        ]);
+
+        $validator = Validator::make(request()->all(), [
+            'title' => 'required|string|max:100',
+            'subtitle' => 'required|string|max:100',
+            'type' => 'required|string|max:100',
+            'code' => 'nullable|string',
+            'icon' => 'nullable|string|max:100',
+            'status' => 'required|boolean',
+            'moduleOrder' => 'required|integer',
+            'link' => 'required|string|max:500',
+            'parent_module_id' => 'required|uuid|exists:parent_modules,id',
+        ]);
+
+        $module = Module::create($validator);
+
+        return response()->json($module);
+    }
+
+    public function show($id)
+    {
+        $module = Module::with('parentModule')->findOrFail($id);
+
+        $formattedModule = [
+            'id' => $module->id,
+            'title' => $module->title,
+            'subtitle' => $module->subtitle,
+            'type' => $module->type,
+            'code' => $module->code,
+            'icon' => $module->icon,
+            'status' => $module->status,
+            'moduleOrder' => $module->moduleOrder,
+            'link' => $module->link,
+            'createdAt' => $module->created_at,
+            'updatedAt' => $module->updated_at,
+            'deletedAt' => $module->deleted_at,
+            'parentModule' => [
+                'id' => $module->parentModule->id,
+                'title' => $module->parentModule->title,
+                'code' => $module->parentModule->code,
+                'subtitle' => $module->parentModule->subtitle,
+            ]
+        ];
+
+        return response()->json($formattedModule);
+    }
+    public function modulesSelected( $parentModuleId)
+    {
+        $modules = Module::where('parent_module_id', $parentModuleId)->get();
+
+        $response = $modules->map(function ($mod) {
+            return [
+                'id' => $mod->id,
+                'title' => $mod->title,
+                'selected' => false,
+            ];
+        });
+
+        return response()->json($response);
+    }
+
+    /**
+     * PUT /module/{id}
+     */
+    public function update(Request $request, $id)
+    {
+        $module = Module::findOrFail($id);
+
+        $request->merge([
+            'parent_module_id' => $request->input('parentModuleId')
+        ]);
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:100',
+            'subtitle' => 'required|string|max:100',
+            'type' => 'required|string|max:100',
+            'code' => 'nullable|string',
+            'icon' => 'nullable|string|max:100',
+            'status' => 'required|boolean',
+            'moduleOrder' => 'required|integer',
+            'link' => 'required|string|max:500',
+            'parent_module_id' => 'required|uuid|exists:parent_modules,id',
+        ]);
+
+        $module->update($validated);
+
+        return response()->json($module);
+    }
+
+    /**
+     * DELETE /module/{id}
+     */
+    public function destroy($id)
+    {
+        $module = Module::findOrFail($id);
+        $module->delete();
+
+        $data = Module::paginate(20);
+        return response()->json($data);
     }
 }

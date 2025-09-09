@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Modules\ModuleController;
+use App\Http\Controllers\Api\Modules\ParentModuleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,18 +26,18 @@ Route::group([
 
 
 //ruta protegida parent-module y module
-Route::middleware(['auth:api',])->group(function () {
+Route::middleware(['auth:api', 'role:admin'])->group(function () {
     // Rutas ParentModuleController
-    // Route::prefix('parent-module')->group(function () {
-    //     Route::get('/', [ParentModuleController::class, 'listPaginate']);  // Listar con paginación
-    //     Route::get('/list', [ParentModuleController::class, 'list']);  // Listar sin paginación
-    //     Route::get('/listar', [ParentModuleController::class, 'listar']);  // Otra lista
-    //     Route::get('/list-detail-module-list', [ParentModuleController::class, 'listDetailModuleList']);  // Detalles de módulos
-    //     Route::post('/', [ParentModuleController::class, 'store']);  // Crear nuevo módulo padre
-    //     Route::get('/{id}', [ParentModuleController::class, 'show']);  // Mostrar módulo padre específico
-    //     Route::put('/{id}', [ParentModuleController::class, 'update']);  // Actualizar módulo padre
-    //     Route::delete('/{id}', [ParentModuleController::class, 'destroy']);  // Eliminar módulo padre
-    // });
+    Route::prefix('parent-module')->group(function () {
+        Route::get('/', [ParentModuleController::class, 'listPaginate']);  // Listar con paginación
+        Route::get('/list', [ParentModuleController::class, 'list']);  // Listar sin paginación
+        Route::get('/listar', [ParentModuleController::class, 'listar']);  // Otra lista
+        Route::get('/list-detail-module-list', [ParentModuleController::class, 'listDetailModuleList']);  // Detalles de módulos
+        Route::post('/', [ParentModuleController::class, 'store']);  // Crear nuevo módulo padre
+        Route::get('/{id}', [ParentModuleController::class, 'show']);  // Mostrar módulo padre específico
+        Route::put('/{id}', [ParentModuleController::class, 'update']);  // Actualizar módulo padre
+        Route::delete('/{id}', [ParentModuleController::class, 'destroy']);  // Eliminar módulo padre
+    });
 
     // Rutas ModuleController
     Route::prefix('module')->group(function () {

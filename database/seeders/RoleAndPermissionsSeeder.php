@@ -34,13 +34,13 @@ class RoleAndPermissionsSeeder extends Seeder
         // Crear roles y asignarles permisos
         $admin = Role::firstOrCreate(
             ['name' => 'Admin', 'guard_name' => 'api'], // Asegúrate de usar 'api' aquí
-            // ['description' => 'Administrador con todos los permisos del sistema']
+            ['description' => 'Administrador con todos los permisos del sistema']
         );
         $admin->syncPermissions(Permission::all()); // Sincroniza todos los permisos con este rol
 
         $estudent = Role::firstOrCreate(
             ['name' => 'Estudiante', 'guard_name' => 'api'], // Asegúrate de usar 'api' aquí
-            // ['description' => 'Estudiante habilitado para hacer practicas']
+            ['description' => 'Estudiante habilitado para hacer practicas']
         );
         $estudent->syncPermissions([
             'formulario',
