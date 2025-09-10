@@ -136,15 +136,17 @@ class AuthController extends Controller
     {
         try {
             return response()->json([
-                'token' => $token,
-                "status" => true,
-                'token_type' => 'bearer',
+                'status' => true,
                 'message' => 'Usuario iniciado sesión correctamente',
-                'user' => auth('api')->user()->only(['id', 'name', 'last_name', 'username', 'email']),
-                'expires_in' => auth('api')->factory()->getTTL() * 60, // segundos
-                'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString() // fecha exacta
-                // 'roles' => $user->getRoleNames(),
-                // 'permissions' => $user->getAllPermissions()->pluck('name'),
+                'data' => [
+                    'token' => $token,
+                    'token_type' => 'bearer',
+                    'username' => auth('api')->user()->only(['id', 'name', 'last_name', 'username', 'email']),
+                    'expires_in' => auth('api')->factory()->getTTL() * 60, // segundos
+                    'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(), // fecha exacta
+                    'roles' => auth('api')->user()->getRoleNames(),
+                    'permissions' => auth('api')->user()->getAllPermissions()->pluck('name'),
+                ]
             ], 200);
         } catch (TokenExpiredException $e) {
             return $this->error('Token expirado, inicia sesión de nuevo', 401);
