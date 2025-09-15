@@ -26,4 +26,9 @@ class Module extends Model
     {
         return $this->belongsTo(ParentModule::class, 'parent_module_id');
     }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'module_role', 'module_id', 'role_id');
+    }
 }

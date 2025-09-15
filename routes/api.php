@@ -1,32 +1,28 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\RoleController;
 use App\Http\Controllers\Api\Modules\ModuleController;
 use App\Http\Controllers\Api\Modules\ParentModuleController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-//ruta libres auth
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'auth'
-], function () {
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
-});
+// **********************************************RUTAS LIBRES DE AUTH ********************************************************************
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('auth:api')->get('/current-user', [AuthController::class, 'getCurrentUser']);
 
-//ruta protegidas auth
-Route::group([
-    'middleware' => 'auth:api',
-    'prefix' => 'auth'
-], function ($router) {
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('logout');
-    Route::post('/current-user', [AuthController::class, 'me'])->middleware('auth:api')->name('me');
+// **********************************************RUTAS DE USUARIOS ********************************************************************
+
+Route::middleware('auth:api')->group(function () {
+    Route::get('/perfil', [AuthController::class, 'perfil']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::put('/update-profile', [AuthController::class, 'updateProfile']); // Esta es la ruta que falta
+    Route::post('/upload-photo', [AuthController::class, 'uploadPhoto']); // Esta es la ruta que falta
 });
 
 
 //ruta protegida parent-module y module
-Route::middleware(['auth:api', 'role:admin'])->group(function () {
+Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
     // Rutas ParentModuleController
     Route::prefix('parent-module')->group(function () {
         Route::get('/', [ParentModuleController::class, 'listPaginate']);  // Listar con paginación
@@ -50,6 +46,17 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     });
 });
 
+// **********************************************RUTAS DE ROLES ********************************************************************
+
+Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+    Route::get('/', [RoleController::class, 'index']);
+    Route::get('/{id}', [RoleController::class, 'show']);
+    Route::middleware('permission:editar_roles')->post('/', [RoleController::class, 'store']);
+    Route::middleware('permission:editar_roles')->put('/{id}', [RoleController::class, 'update']);
+    Route::middleware('permission:editar_roles')->delete('/{id}', [RoleController::class, 'destroy']);
+    Route::middleware('permission:editar_roles')->post('/assign-role/{userId}', [RoleController::class, 'assignRole']);
+    Route::middleware('role:admin')->post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
+});
 
 // // Rutas de Logueo y Registro
 // Route::post('/register', [AuthController::class, 'register'])->middleware('auth:api');
