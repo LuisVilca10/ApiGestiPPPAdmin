@@ -1,18 +1,14 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\RoleController;
 use App\Http\Controllers\Api\Modules\ModuleController;
 use App\Http\Controllers\Api\Modules\ParentModuleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-//ruta libres auth
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'auth'
-], function () {
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
-});
+// **********************************************RUTAS LIBRES DE AUTH ********************************************************************
+Route::post('/login', [AuthController::class, 'login']);
 
 //ruta protegidas auth
 Route::group([
@@ -25,8 +21,18 @@ Route::group([
 });
 
 
+// **********************************************RUTAS DE USUARIOS ********************************************************************
+
+Route::middleware('auth:api')->group(function () {
+    Route::get('/perfil', [AuthController::class, 'perfil']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::put('/update-profile', [AuthController::class, 'updateProfile']); // Esta es la ruta que falta
+    Route::post('/upload-photo', [AuthController::class, 'uploadPhoto']); // Esta es la ruta que falta
+});
+
+
 //ruta protegida parent-module y module
-Route::middleware(['auth:api', 'role:admin'])->group(function () {
+Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
     // Rutas ParentModuleController
     Route::prefix('parent-module')->group(function () {
         Route::get('/', [ParentModuleController::class, 'listPaginate']);  // Listar con paginación
@@ -48,6 +54,18 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::put('/{id}', [ModuleController::class, 'update']);  // Actualizar módulo
         Route::delete('/{id}', [ModuleController::class, 'destroy']);  // Eliminar módulo
     });
+});
+
+// **********************************************RUTAS DE ROLES ********************************************************************
+
+Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+    Route::get('/', [RoleController::class, 'index']);
+    Route::get('/{id}', [RoleController::class, 'show']);
+    Route::middleware('permission:editar_roles')->post('/', [RoleController::class, 'store']);
+    Route::middleware('permission:editar_roles')->put('/{id}', [RoleController::class, 'update']);
+    Route::middleware('permission:editar_roles')->delete('/{id}', [RoleController::class, 'destroy']);
+    Route::middleware('permission:editar_roles')->post('/assign-role/{userId}', [RoleController::class, 'assignRole']);
+    Route::middleware('role:admin')->post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
 });
 
 
