@@ -6,13 +6,18 @@ use App\Models\User;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
+use App\Traits\ApiResponseTrait;
+use App\Traits\RolePermissions;
+use App\Traits\TokenHelper;
+use App\Traits\ValidatorTrait;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Spatie\Permission\Traits\HasRoles;
 
 class AuthController extends Controller
 {
+    use RolePermissions, ApiResponseTrait, TokenHelper, ValidatorTrait, HasRoles;
 
     /**
      * Register a User.
@@ -67,12 +72,24 @@ class AuthController extends Controller
     {
         $credentials = $request->only(['username', 'password']);
 
-        // Intentamos autenticar
-        if (! $token = auth('api')->attempt($credentials)) {
+        // Intentamos autenticar al usuario con las credenciales proporcionadas
+        if (! $user = auth('api')->setTTL(config('jwt.ttl'))->attempt($credentials)) {
             return response()->json(['error' => 'Credenciales inválidas'], 401);
         }
 
-        return $this->respondWithToken($token);
+        // Obtener al usuario autenticado
+        $user = auth('api')->user();
+
+        $token = JWTAuth::fromUser($user); // Usar el método fromUser() para agregar los claims
+
+
+        return $this->successResponse([
+            'token' => $token,
+            'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
+            'username' => $user->only(['id', 'name', 'last_name', 'username', 'email']),
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+        ], 'Usuario iniciado sesión correctamente', 200);
     }
 
     /**
@@ -132,29 +149,29 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithToken($token)
-    {
-        try {
-            return response()->json([
-                'status' => true,
-                'message' => 'Usuario iniciado sesión correctamente',
-                'data' => [
-                    'token' => $token,
-                    // 'token_type' => 'bearer',
-                    'username' => auth('api')->user()->only(['id', 'name', 'last_name', 'username', 'email']),
-                    // 'expires_in' => auth('api')->factory()->getTTL() * 60, // segundos
-                    'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(), // fecha exacta
-                    'roles' => auth('api')->user()->getRoleNames(),
-                    'permissions' => auth('api')->user()->getAllPermissions()->pluck('name'),
-                ]
-            ], 200);
-        } catch (TokenExpiredException $e) {
-            return $this->error('Token expirado, inicia sesión de nuevo', 401);
-        } catch (TokenInvalidException $e) {
-            return $this->error('Token inválido', 401);
-        } catch (\Exception $e) {
-            // Cualquier otro error
-            return $this->error('No autorizado', 401);
-        }
-    }
+    // protected function respondWithToken($token)
+    // {
+    //     try {
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'Usuario iniciado sesión correctamente',
+    //             'data' => [
+    //                 'token' => $token,
+    //                 // 'token_type' => 'bearer',
+    //                 'username' => auth('api')->user()->only(['id', 'name', 'last_name', 'username', 'email']),
+    //                 // 'expires_in' => auth('api')->factory()->getTTL() * 60, // segundos
+    //                 'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(), // fecha exacta
+    //                 'roles' => auth('api')->user()->getRoleNames(),
+    //                 'permissions' => auth('api')->user()->getAllPermissions()->pluck('name'),
+    //             ]
+    //         ], 200);
+    //     } catch (TokenExpiredException $e) {
+    //         return $this->error('Token expirado, inicia sesión de nuevo', 401);
+    //     } catch (TokenInvalidException $e) {
+    //         return $this->error('Token inválido', 401);
+    //     } catch (\Exception $e) {
+    //         // Cualquier otro error
+    //         return $this->error('No autorizado', 401);
+    //     }
+    // }
 }
