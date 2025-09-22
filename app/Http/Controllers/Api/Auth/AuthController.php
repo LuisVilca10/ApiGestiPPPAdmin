@@ -140,9 +140,9 @@ class AuthController extends Controller
                 'message' => 'Usuario iniciado sesión correctamente',
                 'data' => [
                     'token' => $token,
-                    'token_type' => 'bearer',
+                    // 'token_type' => 'bearer',
                     'username' => auth('api')->user()->only(['id', 'name', 'last_name', 'username', 'email']),
-                    'expires_in' => auth('api')->factory()->getTTL() * 60, // segundos
+                    // 'expires_in' => auth('api')->factory()->getTTL() * 60, // segundos
                     'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(), // fecha exacta
                     'roles' => auth('api')->user()->getRoleNames(),
                     'permissions' => auth('api')->user()->getAllPermissions()->pluck('name'),
