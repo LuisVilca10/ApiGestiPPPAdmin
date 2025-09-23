@@ -24,7 +24,7 @@ class AuthController
 {
     use RolePermissions, ApiResponseTrait, TokenHelper, ValidatorTrait, HasRoles;
 
-    
+
     public function register(Request $request)
     {
         // Validación de datos
@@ -64,23 +64,7 @@ class AuthController
 
     public function login(Request $request)
     {
-        $user = User::where('email', $request->email)
-            ->orWhere('username', $request->username)
-            ->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return $this->error('Credenciales incorrectas', 401);
-        }
-
-        // Obtén el token actual
-        $token = JWTAuth::getToken();
-
-        // Verificar si el token se obtiene correctamente
-        if ($token) {
-            // Invalidar el token
-            JWTAuth::invalidate($token);
-            Log::info('Token invalidado');
-        }
+        $credentials = $request->only(['username', 'password']);
 
 
         // Intentamos autenticar al usuario con las credenciales proporcionadas
