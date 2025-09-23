@@ -63,20 +63,25 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
-     * Return a key value array, containing any custom claims to be added to the JWT.
+     * Obtiene las reclamaciones personalizadas para el JWT.
      *
      * @return array
      */
     public function getJWTCustomClaims()
     {
         return [
-            'id' => $this->id, // Agregar 'username' al token
-            'name' => $this->name, // Agregar 'username' al token
-            'last_name' => $this->last_name, // Agregar 'username' al token
-            'username' => $this->username, // Agregar 'username' al token
+            'id' => $this->id,
+            'name' => $this->name,
+            'last_name' => $this->last_name,
+            'username' => $this->username,
             'email' => $this->email,
-            'roles' => $this->getRoleNames(),
-            'permissions' => $this->getAllPermissions()->pluck('name'),
+            'code' => $this->code,
+            'photo_url' => $this->imagen_url,
+            'created_at' => $this->created_at,
+            // Traer todos los roles del usuario
+            'roles' => $this->roles->pluck('name'),  // Devuelve una colección con todos los nombres de los roles
+            // Traer todos los permisos del usuario
+            'permissions' => $this->getPermissionsViaRoles()->pluck('name'),  // Devuelve todos los permisos relacionados con los roles
         ];
     }
 

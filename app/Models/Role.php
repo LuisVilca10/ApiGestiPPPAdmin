@@ -9,7 +9,7 @@ class Role extends Model
     protected $fillable = [
         'name',
         'guard_name',
-        'description', // ✅ Necesario para que se guarde
+        'description',
     ];
 
     // Define la relación con módulos

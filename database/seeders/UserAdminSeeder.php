@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -27,11 +26,10 @@ class UserAdminSeeder extends Seeder
             ]
         );
 
-        // Asignar rol y permisos al admin
+        // Asignar rol Admin
         $admin->assignRole('Admin');
-      
         // Crear usuario Alex
-        $andres = User::firstOrCreate(
+        $alex = User::firstOrCreate(
             ['email' => 'alex.mmm@example.com'],
             [
                 'name' => 'Alex',
@@ -43,7 +41,7 @@ class UserAdminSeeder extends Seeder
             ]
         );
 
-        // Asignar rol y permisos a Andres Montes
-        $andres->assignRole('Admin', 'Estudiante');
+        // Asignar roles a Alex
+        $alex->assignRole('Admin', 'Estudiante');
     }
 }

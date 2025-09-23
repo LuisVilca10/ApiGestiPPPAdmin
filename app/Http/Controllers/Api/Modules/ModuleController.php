@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api\Modules;
 
+use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\ParentModule;
+use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +13,10 @@ use Illuminate\Support\Facades\Log;
 
 class ModuleController
 {
+    use ApiResponseTrait;
+    /**
+     * GET /module?page=&size=&name=pastor
+     */
     public function index(Request $request)
     {
         $size = $request->input('size', 10);
@@ -26,7 +32,6 @@ class ModuleController
                 ->orWhere('type', 'like', "%$name%")
                 ->orWhere('link', 'like', "%$name%");
         }
-
         $data = $query->paginate($size, ['*'], 'page', $page + 1); // <-- aquí ajustas
 
 
@@ -64,8 +69,14 @@ class ModuleController
         ]);
     }
 
+    /**
+     * GET /module/menu
+     * Simula lo que sería un DTO de tipo menú
+     */
     public function menu()
     {
+
+        Log::info("Menu API llamado");
         $user = Auth::user();
         Log::info("Usuario autenticado:", ['user' => $user ? $user->id : null]);
 
@@ -144,6 +155,9 @@ class ModuleController
         return response()->json($menu);
     }
 
+    /**
+     * POST /module
+     */
     public function store(Request $request)
     {
         $request->merge([
@@ -167,6 +181,10 @@ class ModuleController
         return response()->json($module);
     }
 
+
+    /**
+     * GET /module/{id}
+     */
     public function show($id)
     {
         $module = Module::with('parentModule')->findOrFail($id);
@@ -194,7 +212,12 @@ class ModuleController
 
         return response()->json($formattedModule);
     }
-    public function modulesSelected($parentModuleId)
+
+    /**
+     * GET /module/modules-selected/roleId/{roleId}/parentModuleId/{parentModuleId}
+     */
+    public function modulesSelected($roleId, $parentModuleId)
+
     {
         $modules = Module::where('parent_module_id', $parentModuleId)->get();
 

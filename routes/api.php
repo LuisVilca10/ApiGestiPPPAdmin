@@ -4,11 +4,12 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\RoleController;
 use App\Http\Controllers\Api\Modules\ModuleController;
 use App\Http\Controllers\Api\Modules\ParentModuleController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // **********************************************RUTAS LIBRES DE AUTH ********************************************************************
 Route::post('/login', [AuthController::class, 'login']);
+
+
 // //ruta protegidas auth
 // Route::group([
 //     'middleware' => 'auth:api',
@@ -18,6 +19,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
    
 // });
+
 
 // **********************************************RUTAS DE USUARIOS ********************************************************************
 

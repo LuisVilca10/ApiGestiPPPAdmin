@@ -2,7 +2,9 @@
 
 namespace App\Traits;
 
+use App\Models\User;
 use Carbon\Carbon;
+use Laravel\Passport\PersonalAccessTokenResult;
 
 trait TokenHelper
 {
