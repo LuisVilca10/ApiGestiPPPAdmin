@@ -2,21 +2,14 @@
 
 namespace App\Providers;
 
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
-use Illuminate\Http\Request;
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Http\Request;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
 {
-    /**
-     * The path to your application's "home" route.
-     *
-     * Typically, users are redirected here after authentication.
-     *
-     * @var string
-     */
     public const HOME = '/dashboard';
 
     /**
@@ -24,16 +17,32 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Configura el límite de solicitudes para la API
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
-        $this->routes(function () {
-            Route::middleware('api')
-                ->group(base_path('routes/api.php'));
+        // Aquí utilizamos el método map() en lugar de routes()
+        $this->mapApiRoutes();
+        $this->mapWebRoutes();
+    }
 
-            Route::middleware('web')
-                ->group(base_path('routes/web.php'));
-        });
+    /**
+     * Map the "api" routes for the application.
+     */
+    protected function mapApiRoutes()
+    {
+        Route::prefix('api')
+            ->middleware('api')
+            ->group(base_path('routes/api.php'));
+    }
+
+    /**
+     * Map the "web" routes for the application.
+     */
+    protected function mapWebRoutes()
+    {
+        Route::middleware('web')
+            ->group(base_path('routes/web.php'));
     }
 }

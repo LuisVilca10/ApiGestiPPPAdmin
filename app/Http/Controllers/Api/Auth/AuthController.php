@@ -21,6 +21,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
+
 /**
  * @OA\Info(
  *     title="Autenticación",
@@ -156,15 +157,20 @@ class AuthController
             Log::info('Token invalidado');
         }
 
-        try {
-            // Generamos un nuevo token
-            $newToken = FacadesJWTAuth::fromUser($user);
-        } catch (ExceptionsJWTException $e) {
-            return $this->error('No se pudo crear el token', 500);
+
+        // Intentamos autenticar al usuario con las credenciales proporcionadas
+        if (! $user = auth('api')->setTTL(config('jwt.ttl'))->attempt($credentials)) {
+            return response()->json(['error' => 'Credenciales inválidas'], 401);
         }
 
+        // Obtener al usuario autenticado
+        $user = auth('api')->user();
+
+        $token = JWTAuth::fromUser($user); // Usar el método fromUser() para agregar los claims
+
+
         return $this->successResponse([
-            'token' => $newToken,
+            'token' => $token,
             'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
             'username' => $user->only(['id', 'name', 'last_name', 'username', 'email']),
             'roles' => $user->getRoleNames(),
@@ -375,4 +381,5 @@ class AuthController
         }
         return response()->json(['error' => 'No file uploaded'], 400);
     }
+
 }

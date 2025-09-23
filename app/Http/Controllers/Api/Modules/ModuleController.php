@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\ParentModule;
 use App\Traits\ApiResponseTrait;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -74,8 +75,8 @@ class ModuleController
      */
     public function menu()
     {
-        Log::info("Menu API llamado");
 
+        Log::info("Menu API llamado");
         $user = Auth::user();
         Log::info("Usuario autenticado:", ['user' => $user ? $user->id : null]);
 
@@ -212,11 +213,11 @@ class ModuleController
         return response()->json($formattedModule);
     }
 
-
     /**
      * GET /module/modules-selected/roleId/{roleId}/parentModuleId/{parentModuleId}
      */
     public function modulesSelected($roleId, $parentModuleId)
+
     {
         $modules = Module::where('parent_module_id', $parentModuleId)->get();
 
