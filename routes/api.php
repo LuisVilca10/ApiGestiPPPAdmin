@@ -9,22 +9,21 @@ use Illuminate\Support\Facades\Route;
 
 // **********************************************RUTAS LIBRES DE AUTH ********************************************************************
 Route::post('/login', [AuthController::class, 'login']);
+// //ruta protegidas auth
+// Route::group([
+//     'middleware' => 'auth:api',
+//     'prefix' => 'auth'
+// ], function ($router) {
+//     Route::post('/register', [AuthController::class, 'register'])->name('register');
 
-//ruta protegidas auth
-Route::group([
-    'middleware' => 'auth:api',
-    'prefix' => 'auth'
-], function ($router) {
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('logout');
-    Route::post('/current-user', [AuthController::class, 'me'])->middleware('auth:api')->name('me');
-});
-
+   
+// });
 
 // **********************************************RUTAS DE USUARIOS ********************************************************************
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/perfil', [AuthController::class, 'perfil']);
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/update-profile', [AuthController::class, 'updateProfile']); // Esta es la ruta que falta
     Route::post('/upload-photo', [AuthController::class, 'uploadPhoto']); // Esta es la ruta que falta
