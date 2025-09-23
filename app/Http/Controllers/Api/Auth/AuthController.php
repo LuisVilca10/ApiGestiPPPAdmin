@@ -12,68 +12,19 @@ use App\Traits\ValidatorTrait;
 use App\Traits\RolePermissions;
 use Illuminate\Support\Facades\Log;
 use OpenApi\Annotations as OA;
-use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException as ExceptionsJWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth as FacadesJWTAuth;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use PHPOpenSourceSaver\JWTAuth\JWTAuth as JWTAuthJWTAuth;
 use Spatie\Permission\Traits\HasRoles;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
 
 
-/**
- * @OA\Info(
- *     title="Autenticación",
- *     version="1.0",
- *     description="Documentación para gestionar autenticaciones"
- * )
- *
- * @OA\Server(
- *     url="http://localhost:8000"
- * )
- */
 
-/**
- * @OA\Schema(
- *     schema="User",
- *     type="object",
- *     @OA\Property(property="id", type="integer", description="ID del usuario"),
- *     @OA\Property(property="username", type="string", description="Nombre del usuario"),
- *     @OA\Property(property="email", type="string", description="Correo electrónico del usuario"),
- *     @OA\Property(property="imagen_url", type="string", description="URL de la imagen del usuario")
- * )
- */
 class AuthController
 {
     use RolePermissions, ApiResponseTrait, TokenHelper, ValidatorTrait, HasRoles;
 
-    /**
-     * @OA\Post(
-     *     path="/register",
-     *     operationId="registerUserssssssssssssssssss",
-     *     tags={"Auth"},
-     *     summary="Registrar un nuevo usuario",
-     *     description="Registrar un nuevo usuario en el sistema",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"username", "password"},
-     *             @OA\Property(property="username", type="string", example="juanito"),
-     *             @OA\Property(property="email", type="string", example="juanito@example.com"),
-     *             @OA\Property(property="password", type="string", example="secret123")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Usuario registrado correctamente"
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Datos inválidos"
-     *     )
-     * )
-     */
+    
     public function register(Request $request)
     {
         // Validación de datos
@@ -102,7 +53,7 @@ class AuthController
         $this->assignRoleToUser($user, 'usuario');
 
         // Crear token JWT
-        $token = FacadesJWTAuth::fromUser($user);
+        $token = JWTAuth::fromUser($user);
 
         return $this->successResponse([
             'token' => $token,
@@ -111,32 +62,6 @@ class AuthController
         ], 'Usuario registrado correctamente', 201);
     }
 
-
-    /**
-     * @OA\Post(
-     *     path="/login",
-     *     operationId="login",
-     *     tags={"Auth"},
-     *     summary="Iniciar sesión",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"password"},
-     *             @OA\Property(property="email", type="string", example="juanito@example.com"),
-     *             @OA\Property(property="username", type="string", example="juanito"),
-     *             @OA\Property(property="password", type="string", example="secret123")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Usuario iniciado sesión correctamente"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Credenciales incorrectas"
-     *     )
-     * )
-     */
     public function login(Request $request)
     {
         $user = User::where('email', $request->email)
@@ -148,12 +73,12 @@ class AuthController
         }
 
         // Obtén el token actual
-        $token = FacadesJWTAuth::getToken();
+        $token = JWTAuth::getToken();
 
         // Verificar si el token se obtiene correctamente
         if ($token) {
             // Invalidar el token
-            FacadesJWTAuth::invalidate($token);
+            JWTAuth::invalidate($token);
             Log::info('Token invalidado');
         }
 
@@ -190,7 +115,7 @@ class AuthController
             }
 
             // Intentar autenticar usuario con el token recibido
-            if (!$user = FacadesJWTAuth::setToken($token)->authenticate()) {
+            if (!$user = JWTAuth::setToken($token)->authenticate()) {
                 return $this->error('No autorizado - usuario no encontrado', 401);
             }
 
@@ -211,24 +136,6 @@ class AuthController
         }
     }
 
-
-    /**
-     * @OA\Get(
-     *     path="/perfil",
-     *     operationId="perfil",
-     *     summary="Obtener perfil del usuario autenticado",
-     *     tags={"Auth"},
-     *     security={{"passport":{}}},  // Puedes modificar esto a "jwt" si es necesario
-     *     @OA\Response(
-     *         response=200,
-     *         description="Datos del usuario autenticado"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="No autenticado"
-     *     )
-     * )
-     */
     public function perfil(Request $request)
     {
         $user = $request->user();
@@ -238,28 +145,12 @@ class AuthController
         ], 'Datos del usuario obtenidos correctamente');
     }
 
-    /**
-     * @OA\Post(
-     *     path="/logout",
-     *     operationId="logout",
-     *     summary="Cerrar sesión",
-     *     tags={"Auth"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Sesión cerrada"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="No autenticado"
-     *     )
-     * )
-     */
+
     public function logout(Request $request)
     {
         try {
             // Revocar el token del usuario
-            FacadesJWTAuth::invalidate(FacadesJWTAuth::getToken());
+            JWTAuth::invalidate(JWTAuth::getToken());
             return $this->successResponse([], 'Sesión cerrada correctamente', 200);
         } catch (\Exception $e) {
             Log::error('Error al cerrar sesión: ' . $e->getMessage());
@@ -271,7 +162,7 @@ class AuthController
     {
         try {
             // Obtener el usuario autenticado
-            $user = FacadesJWTAuth::parseToken()->authenticate();
+            $user = JWTAuth::parseToken()->authenticate();
 
             if (!$user) {
                 return $this->error('Usuario no encontrado', 404);
@@ -346,8 +237,8 @@ class AuthController
             $newToken = null;
             if ($request->filled('new_password')) {
                 try {
-                    $newToken = FacadesJWTAuth::fromUser($user);
-                } catch (FacadesJWTAuth $e) {
+                    $newToken = JWTAuth::fromUser($user);
+                } catch (JWTAuth $e) {
                 }
             }
 
@@ -381,5 +272,4 @@ class AuthController
         }
         return response()->json(['error' => 'No file uploaded'], 400);
     }
-
 }
