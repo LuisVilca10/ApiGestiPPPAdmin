@@ -232,6 +232,27 @@ class ModuleController
     }
 
     /**
+     * GET /module/role/{roleId}
+     * Devuelve todos los módulos asignados a un rol
+     */
+    public function getModulesByRole($roleId)
+    {
+        $role = \App\Models\Role::with('modules')->findOrFail($roleId);
+
+        return response()->json([
+            'role'    => $role->name,
+            'modules' => $role->modules->map(function ($mod) {
+                return [
+                    'id'    => $mod->id,
+                    'title' => $mod->title,
+                    'code'  => $mod->code,
+                ];
+            })
+        ]);
+    }
+
+
+    /**
      * PUT /module/{id}
      */
     public function update(Request $request, $id)
@@ -269,5 +290,29 @@ class ModuleController
 
         $data = Module::paginate(20);
         return response()->json($data);
+    }
+
+    /**
+     * POST /module/assign
+     * Asigna módulos a un rol
+     */
+    public function assignModulesToRole(Request $request)
+    {
+        $validated = $request->validate([
+            'roleId'   => 'required|exists:roles,id',
+            'modules'  => 'required|array',
+            'modules.*' => 'exists:modules,id',
+        ]);
+
+        $role = \App\Models\Role::findOrFail($validated['roleId']);
+
+        // Sincroniza los módulos con el rol (elimina anteriores y guarda los nuevos)
+        $role->modules()->sync($validated['modules']);
+
+        return response()->json([
+            'message' => 'Módulos asignados correctamente',
+            'role'    => $role->name,
+            'modules' => $role->modules()->get(['id', 'title']),
+        ]);
     }
 }

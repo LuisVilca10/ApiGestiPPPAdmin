@@ -252,7 +252,6 @@ class AuthController
     public function logout(Request $request)
     {
         try {
-            // Revocar el token del usuario
             FacadesJWTAuth::invalidate(FacadesJWTAuth::getToken());
             return $this->successResponse([], 'Sesión cerrada correctamente', 200);
         } catch (\Exception $e) {

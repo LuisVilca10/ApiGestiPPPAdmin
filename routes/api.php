@@ -43,6 +43,8 @@ Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
         Route::get('/{id}', [ModuleController::class, 'show']);  // Ver módulo específico
         Route::put('/{id}', [ModuleController::class, 'update']);  // Actualizar módulo
         Route::delete('/{id}', [ModuleController::class, 'destroy']);  // Eliminar módulo
+        Route::post('/assign', [ModuleController::class, 'assignModulesToRole']); // Asignar módulos a un rol
+        Route::get('/role/{roleId}', [ModuleController::class, 'getModulesByRole']);
     });
 });
 

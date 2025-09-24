@@ -26,6 +26,7 @@ class User extends Authenticatable implements JWTSubject
         'code',
         'username',
         'email',
+        'photo_url',
         'password',
     ];
 
@@ -82,5 +83,15 @@ class User extends Authenticatable implements JWTSubject
             // Traer todos los permisos del usuario
             'permissions' => $this->getPermissionsViaRoles()->pluck('name'),  // Devuelve todos los permisos relacionados con los roles
         ];
+    }
+
+    public function practices()
+    {
+        return $this->hasMany(Practice::class); // Un usuario puede tener muchas prácticas
+    }
+
+    public function visits()
+    {
+        return $this->hasMany(Visit::class); // Un usuario puede hacer muchas visitas
     }
 }
