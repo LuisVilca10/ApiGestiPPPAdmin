@@ -16,28 +16,38 @@ class ModuleSeeder extends Seeder
         $modules = [
             // Hijos de Documentos y Trámite (01)
             [
-                'title'            => 'Bandeja de Documentos',
-                'code'             => '01',
-                'subtitle'         => 'Gestión de documentos recibidos',
-                'type'             => 'basic',
-                'icon'             => 'heroicons_outline:document-text',
-                'status'           => 1,
-                'moduleOrder'      => 1,
-                'link'             => '/homeScreen/docs/inbox',
-                'parent_module_id' => 1, // Relación con ParentModule "01"
-            ],
-            [
                 'title'            => 'Trámites en Línea',
-                'code'             => '02',
+                'code'             => '01',
                 'subtitle'         => 'Gestión de trámites',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:clipboard-document',
                 'status'           => 1,
-                'moduleOrder'      => 2,
+                'moduleOrder'      => 1,
                 'link'             => '/homeScreen/docs/tramites',
                 'parent_module_id' => 1,
             ],
-
+            [
+                'title'            => 'Bitacora de mis tramites',
+                'code'             => '02',
+                'subtitle'         => 'Gestión de trámites',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:clipboard-check',
+                'status'           => 1,
+                'moduleOrder'      => 2,
+                'link'             => '/homeScreen/docs/bitacora',
+                'parent_module_id' => 1,
+            ],
+            [
+                'title'            => 'Mis Documentos',
+                'code'             => '03',
+                'subtitle'         => 'Gestión de documentos recibidos',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:document-text',
+                'status'           => 1,
+                'moduleOrder'      => 3,
+                'link'             => '/homeScreen/docs/documents',
+                'parent_module_id' => 1, // Relación con ParentModule "01"
+            ],
             // Hijos de Seguimiento y Evaluación (02)
             [
                 'title'            => 'Indicadores',
