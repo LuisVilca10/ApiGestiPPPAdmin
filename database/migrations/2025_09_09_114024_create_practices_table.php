@@ -17,21 +17,7 @@ return new class extends Migration
             $table->string('ruc');
             $table->string('name_represent');
             $table->string('lastname_represent');
-            $table->enum('trate_represent', [
-                'Dr',       // Doctor
-                'Lic',      // Licenciado
-                'Ing',      // Ingeniero
-                'Mgs',      // Magíster
-                'Arq',      // Arquitecto
-                'Abog',     // Abogado
-                'Psic',     // Psicólogo
-                'Enf',      // Enfermero
-                'PhD',      // Doctorado (PhD)
-                'Tec',      // Técnico
-                'MBA',      // Master of Business Administration (Maestría en Administración)
-                'Otros'     // Opción para ingresar otro título o tratamiento
-            ]);
-
+            $table->string('trate_represent');
             $table->string('phone_represent');
             $table->string('activity_student');
             $table->integer('hourse_practice');
