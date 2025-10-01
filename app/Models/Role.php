@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-class Role extends Model
+class Role extends SpatieRole
 {
     protected $fillable = [
         'name',
@@ -12,7 +12,7 @@ class Role extends Model
         'description',
     ];
 
-    // Define la relación con módulos
+    // Relación con módulos
     public function modules()
     {
         return $this->belongsToMany(Module::class, 'module_role', 'role_id', 'module_id');

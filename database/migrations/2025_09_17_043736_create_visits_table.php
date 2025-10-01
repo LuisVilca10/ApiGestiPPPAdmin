@@ -13,16 +13,22 @@ return new class extends Migration
     {
         Schema::create('visits', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('student_profile_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('visited_by')->constrained('users')->cascadeOnDelete(); // quién visita
+            $table->foreignId('practice_id')->nullable()->constrained()->nullOnDelete(); // si aplica
+
             $table->dateTime('visit_date');
-            $table->enum('visit_type', ['Inicio', 'Medio', 'Final']);
-            $table->text('visit_notes');
-            $table->decimal('visit_result', 5, 2);
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unsignedBigInteger('practice_id');
-            $table->foreign('practice_id')->references('id')->on('practices')->onDelete('cascade');
+            $table->enum('visit_type', ['inicio', 'medio', 'final']);
+            $table->text('visit_notes')->nullable();
+
+            // Si es calificación, puede ser entero/decimal; hazlo nullable
+            $table->decimal('visit_result', 5, 2)->nullable();
+
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['student_profile_id', 'visit_date']);
         });
     }
 

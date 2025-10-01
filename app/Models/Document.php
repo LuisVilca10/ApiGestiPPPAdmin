@@ -17,8 +17,13 @@ class Document extends Model
         'document_status',
         'practice_id'
     ];
+
     public function practice()
     {
-        return $this->belongsTo(Practice::class); // Un documento pertenece a una sola práctica
+        return $this->belongsTo(Practice::class);
+    }
+    public function uploader()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 }

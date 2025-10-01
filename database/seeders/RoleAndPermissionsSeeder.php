@@ -2,19 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use App\Models\Role; // tu modelo que extiende Spatie
 
 class RoleAndPermissionsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
         $permisos = [
             'ver_usuarios',
@@ -26,24 +22,20 @@ class RoleAndPermissionsSeeder extends Seeder
             'editar_roles'
         ];
 
-        // Crear permisos
         foreach ($permisos as $permiso) {
             Permission::firstOrCreate(['name' => $permiso, 'guard_name' => 'api']);
         }
 
-        // Crear roles y asignarles permisos
         $admin = Role::firstOrCreate(
-            ['name' => 'Admin', 'guard_name' => 'api'], // Asegúrate de usar 'api' aquí
+            ['name' => 'Admin', 'guard_name' => 'api'],
             ['description' => 'Administrador con todos los permisos del sistema']
         );
-        $admin->syncPermissions(Permission::all()); // Sincroniza todos los permisos con este rol
+        $admin->syncPermissions(Permission::all());
 
-        $estudent = Role::firstOrCreate(
-            ['name' => 'Estudiante', 'guard_name' => 'api'], // Asegúrate de usar 'api' aquí
-            ['description' => 'Estudiante habilitado para hacer practicas']
+        $student = Role::firstOrCreate(
+            ['name' => 'Estudiante', 'guard_name' => 'api'],
+            ['description' => 'Estudiante habilitado para hacer prácticas']
         );
-        $estudent->syncPermissions([
-            'formulario',
-        ]);
+        $student->syncPermissions(['formulario']);
     }
 }

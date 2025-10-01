@@ -76,22 +76,26 @@ class User extends Authenticatable implements JWTSubject
             'username' => $this->username,
             'email' => $this->email,
             'code' => $this->code,
-            'photo_url' => $this->imagen_url,
-            'created_at' => $this->created_at,
-            // Traer todos los roles del usuario
-            'roles' => $this->roles->pluck('name'),  // Devuelve una colección con todos los nombres de los roles
-            // Traer todos los permisos del usuario
-            'permissions' => $this->getPermissionsViaRoles()->pluck('name'),  // Devuelve todos los permisos relacionados con los roles
+            'photo_url' => $this->photo_url,
+            'created_at' => optional($this->created_at)->toISOString(),
+            'roles' => $this->roles->pluck('name')->values()->all(),
+            'permissions' => $this->getAllPermissions()->pluck('name')->values()->all(),
         ];
     }
 
-    public function practices()
+    public function studentProfile()
     {
-        return $this->hasMany(Practice::class); // Un usuario puede tener muchas prácticas
+        return $this->hasOne(StudentProfile::class);
+    }
+    // si este user es estudiante
+
+    public function visitsMade()
+    {
+        return $this->hasMany(Visit::class, 'visited_by');
     }
 
-    public function visits()
+    public function uploadedDocuments()
     {
-        return $this->hasMany(Visit::class); // Un usuario puede hacer muchas visitas
+        return $this->hasMany(Document::class, 'uploaded_by');
     }
 }

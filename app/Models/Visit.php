@@ -16,17 +16,20 @@ class Visit extends Model
         'visit_type',
         'visit_notes',
         'visit_result',
-        'user_id',
+        'student_profile_id',
         'practice_id'
     ];
 
-    public function user()
+    public function student()
     {
-        return $this->belongsTo(User::class); // Una visita pertenece a un solo usuario
+        return $this->belongsTo(StudentProfile::class, 'student_profile_id');
     }
-
+    public function visitor()
+    {
+        return $this->belongsTo(User::class, 'visited_by');
+    }
     public function practice()
     {
-        return $this->belongsTo(Practice::class); // Una visita pertenece a una sola práctica
+        return $this->belongsTo(Practice::class);
     }
 }

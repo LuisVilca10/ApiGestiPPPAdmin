@@ -13,24 +13,33 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
+
             $table->enum('document_type', [
-                'Carta Presentacion',
-                'Carta Aceptacion',
-                'Plan de Practicas',
-                'Evaluacion de Practicas',
-                'Informe de Practicas',
-                'Monitoreo y Evaluacion de Practicas'
+                'carta_presentacion',
+                'carta_aceptacion',
+                'plan_practicas',
+                'evaluacion_practicas',
+                'informe_practicas',
+                'monitoreo_evaluacion'
             ]);
-            $table->string('document_path');
+
+            $table->string('document_path');       // ruta en Storage, no URL
+            $table->string('original_name');       // nombre de archivo original
             $table->enum('document_status', [
-                'Aprobado',
-                'En Proceso',
-                'Denegado'
-            ]);
-            $table->unsignedBigInteger('practice_id');
-            $table->foreign('practice_id')->references('id')->on('practices')->onDelete('cascade');
+                'aprobado',
+                'en_proceso',
+                'denegado'
+            ])->default('en_proceso');
+
+            $table->foreignId('practice_id')->constrained()->cascadeOnDelete();
+
+            // quién subió (útil para auditoría)
+            $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
+
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['practice_id', 'document_type', 'document_status']);
         });
     }
 

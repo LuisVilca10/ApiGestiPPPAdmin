@@ -20,18 +20,20 @@ class Practice extends Model
         'phone_represent',
         'activity_student',
         'hourse_practice',
-        'user_id',
+        'student_profile_id',
     ];
-    public function user()
+
+    public function studentProfile()
     {
-        return $this->belongsTo(User::class); // Una práctica pertenece a un solo usuario
+        return $this->belongsTo(StudentProfile::class);
     }
     public function documents()
     {
-        return $this->hasMany(Document::class); // Una práctica puede tener muchos documentos
+        return $this->hasMany(Document::class);
     }
     public function visits()
     {
-        return $this->hasMany(Visit::class); // Una práctica puede tener muchas visitas
-    }
+        return $this->hasMany(Visit::class);
+    } // si las atas a práctica
+
 }

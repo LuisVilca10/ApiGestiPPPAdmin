@@ -13,32 +13,41 @@ return new class extends Migration
     {
         Schema::create('practices', function (Blueprint $table) {
             $table->id();
-            $table->string('name_empresa');
-            $table->string('ruc');
-            $table->string('name_represent');
-            $table->string('lastname_represent');
-            $table->enum('trate_represent', [
-                'Dr',       // Doctor
-                'Lic',      // Licenciado
-                'Ing',      // Ingeniero
-                'Mgs',      // Magíster
-                'Arq',      // Arquitecto
-                'Abog',     // Abogado
-                'Psic',     // Psicólogo
-                'Enf',      // Enfermero
-                'PhD',      // Doctorado (PhD)
-                'Tec',      // Técnico
-                'MBA',      // Master of Business Administration (Maestría en Administración)
-                'Otros'     // Opción para ingresar otro título o tratamiento
-            ]);
 
-            $table->string('phone_represent');
-            $table->string('activity_student');
-            $table->integer('hourse_practice');
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // Relación: esta práctica es del estudiante (no del user)
+            $table->foreignId('student_profile_id')->constrained()->cascadeOnDelete();
+
+            // Empresa
+            $table->string('company_name');              // antes name_empresa
+            $table->string('ruc', 11);                  // Perú: 11 dígitos, guárdalo como string
+            // Representante
+            $table->string('represent_first_name');
+            $table->string('represent_last_name');
+            $table->enum('represent_title', [
+                'Dr',
+                'Lic',
+                'Ing',
+                'Mgs',
+                'Arq',
+                'Abog',
+                'Psic',
+                'Enf',
+                'PhD',
+                'Tec',
+                'MBA',
+                'Otros'
+            ]);
+            $table->string('represent_phone', 20);      // permite + prefijos
+
+            // Info de la práctica
+            $table->string('student_activity');         // antes activity_student
+            $table->unsignedSmallInteger('required_hours'); // antes hourse_practice
+
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['student_profile_id']);
+            $table->index(['ruc']);
         });
     }
 

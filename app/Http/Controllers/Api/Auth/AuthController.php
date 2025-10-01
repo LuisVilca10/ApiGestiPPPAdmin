@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -11,14 +10,11 @@ use App\Traits\TokenHelper;
 use App\Traits\ValidatorTrait;
 use App\Traits\RolePermissions;
 use Illuminate\Support\Facades\Log;
-use OpenApi\Annotations as OA;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
-use PHPOpenSourceSaver\JWTAuth\JWTAuth as JWTAuthJWTAuth;
 use Spatie\Permission\Traits\HasRoles;
-
-
 
 class AuthController
 {
@@ -50,7 +46,7 @@ class AuthController
         ]);
 
         // Asignar rol por defecto
-        $this->assignRoleToUser($user, 'usuario');
+        $this->assignRoleToUser($user, 'Estudiante');
 
         // Crear token JWT
         $token = JWTAuth::fromUser($user);
@@ -82,20 +78,15 @@ class AuthController
             Log::info('Token invalidado');
         }
 
-
-        // Intentamos autenticar al usuario con las credenciales proporcionadas
-        if (! $user = auth('api')->setTTL(config('jwt.ttl'))->attempt($credentials)) {
-            return response()->json(['error' => 'Credenciales inválidas'], 401);
+        try {
+            // Generamos un nuevo token
+            $newToken = JWTAuth::fromUser($user);
+        } catch (JWTException $e) {
+            return $this->error('No se pudo crear el token', 500);
         }
 
-        // Obtener al usuario autenticado
-        $user = auth('api')->user();
-
-        $token = JWTAuth::fromUser($user); // Usar el método fromUser() para agregar los claims
-
-
         return $this->successResponse([
-            'token' => $token,
+            'token' => $newToken,
             'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
             'username' => $user->only(['id', 'name', 'last_name', 'username', 'email']),
             'roles' => $user->getRoleNames(),
@@ -149,7 +140,6 @@ class AuthController
     public function logout(Request $request)
     {
         try {
-            FacadesJWTAuth::invalidate(FacadesJWTAuth::getToken());
             // Revocar el token del usuario
             JWTAuth::invalidate(JWTAuth::getToken());
             return $this->successResponse([], 'Sesión cerrada correctamente', 200);
