@@ -5,6 +5,8 @@ namespace App\Traits;
 
 use Spatie\Permission\Models\Role;
 
+use Spatie\Permission\Models\Permission;
+
 trait RolePermissions
 {
     // Asignar rol a un usuario

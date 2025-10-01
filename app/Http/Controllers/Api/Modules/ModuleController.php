@@ -77,6 +77,7 @@ class ModuleController
     {
 
         Log::info("Menu API llamado");
+        
         $user = Auth::user();
         Log::info("Usuario autenticado:", ['user' => $user ? $user->id : null]);
 

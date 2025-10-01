@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('practices', function (Blueprint $table) {
             $table->id();
-
             // Relación: esta práctica es del estudiante (no del user)
             $table->foreignId('student_profile_id')->constrained()->cascadeOnDelete();
 
@@ -43,6 +42,16 @@ return new class extends Migration
             $table->string('student_activity');         // antes activity_student
             $table->unsignedSmallInteger('required_hours'); // antes hourse_practice
 
+            $table->string('name_empresa');
+            $table->string('ruc');
+            $table->string('name_represent');
+            $table->string('lastname_represent');
+            $table->string('trate_represent');
+            $table->string('phone_represent');
+            $table->string('activity_student');
+            $table->integer('hourse_practice');
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
 

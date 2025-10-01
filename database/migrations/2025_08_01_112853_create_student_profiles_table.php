@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('code')->unique();
-            $table->string('first_name');
-            $table->string('last_name');
             $table->string('program')->nullable();
             $table->unsignedSmallInteger('semester')->nullable();
             $table->date('enrolled_at')->nullable();
