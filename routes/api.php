@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\RoleController;
 use App\Http\Controllers\Api\Modules\ModuleController;
 use App\Http\Controllers\Api\Modules\ParentModuleController;
+use App\Http\Controllers\Api\PPP\DocumentController;
 use Illuminate\Support\Facades\Route;
 
 // **********************************************RUTAS LIBRES DE AUTH ********************************************************************
@@ -67,6 +68,12 @@ Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(
     Route::middleware('permission:editar_roles')->delete('/{id}', [RoleController::class, 'destroy']);
     Route::middleware('permission:editar_roles')->post('/assign-role/{userId}', [RoleController::class, 'assignRole']);
     Route::middleware('role:admin')->post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
+});
+
+// **********************************************RUTAS DE TRAMITES ********************************************************************
+
+Route::prefix('tramite')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+    Route::get('/', [DocumentController::class, 'index']);
 });
 
 

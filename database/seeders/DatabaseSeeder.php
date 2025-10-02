@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             ParentModuleSeeder::class,
             ModuleSeeder::class,
             ModuleRoleSeeder::class,
+            PracticeSeeder::class,
+            DocumentSeeder::class
         ]);
     }
 }
