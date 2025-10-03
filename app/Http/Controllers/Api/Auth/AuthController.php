@@ -60,22 +60,36 @@ class AuthController
 
     public function login(Request $request)
     {
-        $credentials = $request->only(['username', 'password']);
+        $credentials = $request->validate([
+            'login'    => ['required', 'string'], // email o username
+            'password' => ['required', 'string'],
+        ]);
 
-        try {
-            // Generamos un nuevo token
-            $newToken = JWTAuth::fromUser($user);
-        } catch (JWTException $e) {
-            return $this->error('No se pudo crear el token', 500);
+        // aceptar email o username
+        $user = User::where('email', $credentials['login'])
+            ->orWhere('username', $credentials['login'])
+            ->first();
+
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
-        return $this->successResponse([
-            'token' => $newToken,
-            'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
-            'username' => $user->only(['id', 'name', 'last_name', 'username', 'email']),
-            'roles' => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
-        ], 'Usuario iniciado sesión correctamente', 200);
+        try {
+            $token = JWTAuth::fromUser($user);
+        } catch (JWTException $e) {
+            return response()->json(['message' => 'No se pudo crear el token'], 500);
+        }
+
+        return response()->json([
+            'message' => 'Inicio de sesión correcto',
+            'data'    => [
+                'token'       => $token,
+                'expires_at'  => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
+                'user'        => $user->only(['id', 'name', 'last_name', 'username', 'email']),
+                'roles'       => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
+            ]
+        ]);
     }
 
     public function getCurrentUser(Request $request)

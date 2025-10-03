@@ -43,7 +43,6 @@ return new class extends Migration
             $table->unsignedSmallInteger('required_hours'); // antes hourse_practice
 
             $table->string('name_empresa');
-            $table->string('ruc');
             $table->string('name_represent');
             $table->string('lastname_represent');
             $table->string('trate_represent');

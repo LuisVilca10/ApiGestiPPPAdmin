@@ -8,66 +8,68 @@ use App\Models\ParentModule;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class ModuleController
 {
     use ApiResponseTrait;
+
     /**
-     * GET /module?page=&size=&name=pastor
+     * GET /module?page=&size=&name=
      */
     public function index(Request $request)
     {
-        $size = $request->input('size', 10);
+        $size = (int) $request->input('size', 10);
         $name = $request->input('name');
-        $page = max((int) $request->input('page', 0), 0);
 
-        $query = Module::with('parentModule');
+        $query = Module::query(); // si no necesitas el padre en la respuesta
 
-        if ($name) {
-            $query->where('title', 'like', "%$name%")
-                ->orWhere('subtitle', 'like', "%$name%")
-                ->orWhere('code', 'like', "%$name%")
-                ->orWhere('type', 'like', "%$name%")
-                ->orWhere('link', 'like', "%$name%");
+        // Si quieres igualmente cargar el padre (aunque no lo devolvamos), puedes dejar:
+        // $query = Module::with('parentModule');
+
+        // Búsqueda tipo "index": varios campos, agrupados en un closure
+        if (!empty($name)) {
+            $query->where(function ($q) use ($name) {
+                $q->where('title', 'like', "%{$name}%")
+                    ->orWhere('subtitle', 'like', "%{$name}%")
+                    ->orWhere('code', 'like', "%{$name}%")
+                    ->orWhere('type', 'like', "%{$name}%")
+                    ->orWhere('link', 'like', "%{$name}%");
+            });
         }
-        $data = $query->paginate($size, ['*'], 'page', $page + 1); // <-- aquí ajustas
 
+        // Paginación estilo listPaginate (sin ajustar page aquí; Laravel usa 1-based)
+        $data = $query->paginate($size);
 
-        $response = $data->items(); // Accedemos solo a los items de la paginación
-
-        // Mapear la respuesta
-        $response = collect($response)->map(function ($module) {
+        // Contenido estilo listPaginate con fechas ISO y status como int
+        $content = $data->getCollection()->map(function ($module) {
             return [
-                'id' => $module->id,
-                'title' => $module->title,
-                'subtitle' => $module->subtitle,
-                'type' => $module->type,
-                'code' => $module->code,
-                'icon' => $module->icon,
-                'status' => (int) $module->status, // ahora siempre será 0 o 1
+                'id'          => $module->id,
+                'title'       => $module->title,
+                'code'        => $module->code,
+                'subtitle'    => $module->subtitle,
+                'type'        => $module->type,
+                'icon'        => $module->icon,
+                'status'      => (int) $module->status,
                 'moduleOrder' => $module->moduleOrder,
-                'link' => $module->link,
-                'createdAt' => $module->created_at,
-                'updatedAt' => $module->updated_at,
-                'deletedAt' => $module->deleted_at,
-                'parentModule' => $module->parentModule ? [
-                    'id' => $module->parentModule->id,
-                    'title' => $module->parentModule->title,
-                    'code' => $module->parentModule->code,
-                    'subtitle' => $module->parentModule->subtitle,
-                ] : null,
+                'link'        => $module->link,
+                'createdAt'   => optional($module->created_at)->toISOString(),
+                'updatedAt'   => optional($module->updated_at)->toISOString(),
+                'deletedAt'   => $module->deleted_at ? optional($module->deleted_at)->toISOString() : null,
             ];
-        });
+        })->values();
 
+        // Respuesta exactamente como listPaginate (currentPage en 0-based)
         return response()->json([
-            'content' => $response,
+            'totalPages'    => $data->lastPage(),
+            'currentPage'   => $data->currentPage() - 1,
             'totalElements' => $data->total(),
-            'currentPage' => $data->currentPage() - 1, // Restamos 1 para ajustarlo al formato que pides
-            'totalPages' => $data->lastPage(),
+            'content'       => $content,
         ]);
     }
+
 
     /**
      * GET /module/menu
@@ -77,7 +79,7 @@ class ModuleController
     {
 
         Log::info("Menu API llamado");
-        
+
         $user = Auth::user();
         Log::info("Usuario autenticado:", ['user' => $user ? $user->id : null]);
 
@@ -157,30 +159,43 @@ class ModuleController
     }
 
     /**
-     * POST /module
+     * POST /parent-module
      */
     public function store(Request $request)
     {
-        $request->merge([
-            'parent_module_id' => $request->input('parentModuleId')
-        ]);
-
+        // Validar solo los campos que vienen del cliente
         $validated = $request->validate([
-            'title' => 'required|string|max:100',
+            'title'    => 'required|string|max:100',
+            'code'     => 'required|string|max:10',
             'subtitle' => 'required|string|max:100',
-            'type' => 'required|string|max:100',
-            'code' => 'nullable|string',
-            'icon' => 'nullable|string|max:100',
-            'status' => 'required|boolean',
-            'moduleOrder' => 'required|integer',
-            'link' => 'required|string|max:500',
-            'parent_module_id' => 'required|uuid|exists:parent_modules,id',
+            'status'   => 'required|boolean',
         ]);
 
-        $module = Module::create($validated);
+        // Calcular el próximo orden automáticamente
+        $nextOrder = (int) (ParentModule::max('moduleOrder') ?? 0) + 1;
 
-        return response()->json($module);
+        // Defaults que SIEMPRE se rellenan en el backend
+        $defaults = [
+            'type'        => 'collapsable',
+            'icon'        => 'heroicons_outline:user-group',
+            'moduleOrder' => $nextOrder,
+            'link'        => '/example',
+        ];
+
+        // Merge entre lo que manda el cliente y lo que define el backend
+        $payload = array_merge($defaults, Arr::only($validated, [
+            'title',
+            'code',
+            'subtitle',
+            'status'
+        ]));
+
+        $module = ParentModule::create($payload);
+
+        return response()->json($module, 201);
     }
+
+
 
 
     /**

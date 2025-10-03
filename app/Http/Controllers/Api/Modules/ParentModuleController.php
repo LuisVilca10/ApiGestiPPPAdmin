@@ -19,16 +19,23 @@ class ParentModuleController
 
         $query = ParentModule::query();
 
-        if ($name) {
-            $query->where('title', 'like', "%$name%");
+        // Búsqueda tipo "index": varios campos, agrupados en un closure
+        if (!empty($name)) {
+            $query->where(function ($q) use ($name) {
+                $q->where('title', 'like', "%{$name}%")
+                    ->orWhere('subtitle', 'like', "%{$name}%")
+                    ->orWhere('code', 'like', "%{$name}%")
+                    ->orWhere('type', 'like', "%{$name}%")
+                    ->orWhere('link', 'like', "%{$name}%");
+            });
         }
 
         $data = $query->paginate($size);
-
         // Construir la respuesta con el formato solicitado
         $response = [
             'totalPages' => $data->lastPage(),
-            'currentPage' => $data->currentPage() - 1, // Restamos 1 para ajustarlo al formato que pides
+            'currentPage' => $data->currentPage() - 1,
+            'totalElements' => $data->total(),
             'content' => $data->map(function ($module) {
                 return [
                     'id' => $module->id,
@@ -45,7 +52,7 @@ class ParentModuleController
                     'deletedAt' => $module->deleted_at ? Carbon::parse($module->deleted_at)->toISOString() : null, // Convierte la fecha a Carbon si existe
                 ];
             }),
-            'totalElements' => $data->total(),
+
         ];
 
         return response()->json($response);

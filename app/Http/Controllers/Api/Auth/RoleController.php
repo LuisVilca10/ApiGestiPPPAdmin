@@ -13,7 +13,7 @@ class RoleController
     {
         $pageSize = $request->get('size', 10);
         $page = $request->get('page', 0);
-        $name = $request->get('name'); // 🔍 Variable de búsqueda
+        $name = $request->get('name');
 
         // Construir query con filtro si hay búsqueda
         $query = Role::query();

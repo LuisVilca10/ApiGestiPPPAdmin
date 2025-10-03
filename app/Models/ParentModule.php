@@ -21,6 +21,11 @@ class ParentModule extends Model
         'moduleOrder',
         'link',
     ];
+
+    protected $casts = [
+        'moduleOrder' => 'integer',
+    ];
+
     public function modules()
     {
         return $this->hasMany(Module::class, 'parent_module_id');
