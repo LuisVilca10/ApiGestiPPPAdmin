@@ -4,14 +4,25 @@ namespace App\Http\Controllers\Api\PPP;
 
 use App\Models\Document;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DocumentController
 {
     // Método GET: Obtener todos los documentos
-    public function index()
+    public function index(Request $request)
     {
-        $documents = Document::all();
-        return response()->json($documents);
+        $size = $request->input('size', 10);
+        $search = $request->input('search');
+
+        // Utiliza paginación en lugar de `all()`
+        $data = Document::paginate($size);
+
+        return response()->json([
+            'content' => $data->items(),  // Devuelve solo los elementos de la página actual
+            'totalElements' => $data->total(),
+            'currentPage' => $data->currentPage() - 1, // Restamos 1 para ajustarlo al formato que pides
+            'totalPages' => $data->lastPage(),
+        ]);
     }
 
     // Método GET: Obtener un documento específico por ID

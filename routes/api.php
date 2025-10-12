@@ -72,7 +72,7 @@ Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(
 
 // **********************************************RUTAS DE TRAMITES ********************************************************************
 
-Route::prefix('tramite')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+Route::prefix('tramite')->group(function () {
     Route::get('/', [DocumentController::class, 'index']);
 });
 
