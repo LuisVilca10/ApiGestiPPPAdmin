@@ -12,15 +12,18 @@ class DocumentController
     public function index(Request $request)
     {
         $size = $request->input('size', 10);
+        $frontendPage = $request->input('page', 0);
+        $laravelPage = $frontendPage + 1; 
+
         $search = $request->input('search');
 
         // Utiliza paginación en lugar de `all()`
-        $data = Document::paginate($size);
+        $data = Document::paginate($size, ['*'], 'page', $laravelPage);
 
         return response()->json([
             'content' => $data->items(),  // Devuelve solo los elementos de la página actual
             'totalElements' => $data->total(),
-            'currentPage' => $data->currentPage() - 1, // Restamos 1 para ajustarlo al formato que pides
+            'currentPage' => $frontendPage, // Restamos 1 para ajustarlo al formato que pides
             'totalPages' => $data->lastPage(),
         ]);
     }
