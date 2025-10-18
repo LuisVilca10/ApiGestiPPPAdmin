@@ -23,7 +23,7 @@ class ModuleSeeder extends Seeder
                 'icon'             => 'heroicons_outline:clipboard-document',
                 'status'           => 1,
                 'moduleOrder'      => 1,
-                'link'             => '/homeScreen/docs/tramites',
+                'link'             => '/homeScreen/docs/practices',
                 'parent_module_id' => 1,
             ],
             [

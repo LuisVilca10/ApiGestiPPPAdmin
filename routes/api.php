@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\RoleController;
 use App\Http\Controllers\Api\Modules\ModuleController;
 use App\Http\Controllers\Api\Modules\ParentModuleController;
 use App\Http\Controllers\Api\PPP\DocumentController;
+use App\Http\Controllers\Api\PPP\PracticeController;
 use Illuminate\Support\Facades\Route;
 
 // **********************************************RUTAS LIBRES DE AUTH ********************************************************************
@@ -18,7 +19,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // ], function ($router) {
 //     Route::post('/register', [AuthController::class, 'register'])->name('register');
 
-   
+
 // });
 
 
@@ -72,8 +73,9 @@ Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(
 
 // **********************************************RUTAS DE TRAMITES ********************************************************************
 
-Route::prefix('tramite')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
-    Route::get('/', [DocumentController::class, 'index']);
+Route::prefix('practice')->group(function () {
+    Route::post('/', [PracticeController::class, 'store']);
+    Route::get('/', [PracticeController::class, 'index']);
 });
 
 
