@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api\PPP;
 use App\Models\Practice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PracticeController
 {
@@ -50,46 +53,70 @@ class PracticeController
     // Método POST: Crear una nueva práctica
     public function store(Request $request)
     {
-        // 1. Validar los datos, INCLUYENDO user_id como campo requerido
-        $validatedData = $request->validate([
-            'name_empresa' => 'required|string|max:255',
-            'ruc' => 'required|string|size:11|regex:/^[0-9]+$/|',
-            'name_represent' => 'required|string|max:255',
-            'lastname_represent' => 'required|string|max:255',
-            'trate_represent' => 'nullable|string|max:50',
-            'phone_represent' => 'required|string|max:20',
-            'activity_student' => 'required|string|max:500',
-            'hourse_practice' => 'required|integer|min:1',
-            // ⭐ ¡CLAVE! Validar que user_id esté en el JSON
-            'user_id' => 'required|integer|exists:users,id',
-        ]);
-        // 2. Crear el registro
-        // Usamos $validatedData, que ya contiene todos los campos, incluido user_id.
-       
-         $practice = Practice::create($validatedData);
+        try {
+            $validated = $request->validate([
+                'name_empresa' => 'required|string|max:255',
+                'ruc' => 'required|string|size:11|regex:/^[0-9]+$/',
+                'name_represent' => 'required|string|max:255',
+                'lastname_represent' => 'required|string|max:255',
+                'trate_represent' => 'nullable|string|max:50',
+                'phone_represent' => 'required|string|max:20',
+                'activity_student' => 'required|string|max:500',
+                'hourse_practice' => 'required|integer|min:1',
+            ]);
 
-        $estudiante = $practice->user;
+            $userId = Auth::id();
+            if (!$userId) {
+                return response()->json(['error' => 'Token inválido o usuario no autenticado'], 401);
+            }
 
-        $data = [
-            // Datos del Estudiante (Modelo User)
-            'estudiante' => $estudiante,
-            // Datos de la Empresa/Práctica (Modelo Practice)
-            'empresa' => $practice,
-            // Datos Fijos del Documento (De la imagen)
-            'fecha_emision' => now()->locale('es')->isoFormat('D [de] MMMM'),
-            'destinatario_nombre' => 'Mg. Amed Vargas Martínez',
-            'destinatario_titulo' => 'Director de la EP Administración',
-            // Puedes usar una numeración dinámica o manual para la carta
-            'numero_carta' => 'CARTA N° ' . (Practice::count() + 1) . '-2025 /IS-FIA-UPEU-CJ',
-        ];
+            $validated['user_id'] = $userId;
 
-        $pdf = Pdf::loadView('pdfs.carta_presentacion', $data);
+            // 👇 Log para ver qué llega
+            Log::info('Datos validados:', $validated);
 
-        // 5. Devolver la respuesta de DESCARGA
-        $nombre_archivo = 'CARTA_PRESENTACION_' . $estudiante->codigo_universitario . '.pdf';
+            $practice = Practice::create($validated);
 
-        // 3. Devolver la respuesta
-        return $pdf->download($nombre_archivo);
+            // 👇 Confirmación de creación
+            Log::info('Práctica creada:', $practice->toArray());
+
+            $estudiante = $practice->user;
+
+            $data = [
+                'estudiante' => $estudiante,
+                'empresa' => $practice,
+                'fecha_emision' => now()->locale('es')->isoFormat('D [de] MMMM'),
+                'destinatario_nombre' => 'Mg. Amed Vargas Martínez',
+                'destinatario_titulo' => 'Director de la EP Administración',
+                'numero_carta' => 'CARTA N° ' . (Practice::count()) . '-2025 /IS-FIA-UPEU-CJ',
+            ];
+
+            $pdf = Pdf::loadView('pdfs.carta_presentacion', $data);
+            $fileName = 'CARTA_PRESENTACION_' . $estudiante->codigo_universitario . '.pdf';
+            $filePath = 'public/practicas/' . $fileName;
+
+            Storage::put($filePath, $pdf->output());
+            $publicUrl = Storage::url($filePath);
+
+            Log::info('PDF guardado en: ' . $publicUrl);
+
+            return response()->json([
+                'message' => '✅ Práctica creada correctamente',
+                'practice' => $practice,
+                'pdf_url' => asset($publicUrl)
+            ]);
+        } catch (\Throwable $th) {
+            Log::error('❌ Error en creación de práctica:', [
+                'error' => $th->getMessage(),
+                'line' => $th->getLine(),
+                'trace' => $th->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'message' => 'Error interno del servidor',
+                'error' => $th->getMessage()
+            ], 500);
+        }
     }
 
     // Método PUT: Actualizar los detalles de una práctica

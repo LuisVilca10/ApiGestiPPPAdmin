@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Times New Roman', serif;
-            font-size: 10pt;
+            font-size: 12pt;
             color: #000;
             margin: 0.5cm 1cm;
         }
@@ -51,7 +51,7 @@
         /* Número de carta */
         .carta-num {
             font-weight: bold;
-            margin-bottom: 25px;
+            margin-bottom:  5px;
         }
 
         /* Destinatario */
@@ -73,13 +73,14 @@
 
         /* Despedida */
         .farewell {
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
 
         /* Firma */
         .signature {
-            text-align: center;
-            margin-top: 60px;
+            text-align: start;
+            margin-top: 40px;
+            line-height: 1;
         }
 
         .signature .name {
@@ -93,7 +94,7 @@
         /* Footer */
         .footer {
             position: fixed;
-            bottom: 1cm;
+            bottom: 0.1cm;
             left: 0;
             right: 0;
             text-align: center;
