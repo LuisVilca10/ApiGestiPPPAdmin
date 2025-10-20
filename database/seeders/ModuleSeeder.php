@@ -128,6 +128,28 @@ class ModuleSeeder extends Seeder
                 'link'             => '/homeScreen/setup/module',
                 'parent_module_id' => 3,
             ],
+            [
+                'title'            => 'Modulos de Prueba de Padre Inexistente',
+                'code'             => '09',
+                'subtitle'         => 'Gestión de módulos de prueba de padre inexistente',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:folder-open',
+                'status'           => 1,
+                'moduleOrder'      => 1,
+                'link'             => '/homeScreen/setup/module',
+                'parent_module_id' => 4,
+            ],
+            [
+                'title'            => 'Modulos de Prueba',
+                'code'             => '09',
+                'subtitle'         => 'Gestión de módulos de prueba',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:folder-open',
+                'status'           => 1,
+                'moduleOrder'      => 1,
+                'link'             => '/homeScreen/setup/module',
+                'parent_module_id' => 5,
+            ],
         ];
 
         foreach ($modules as $data) {

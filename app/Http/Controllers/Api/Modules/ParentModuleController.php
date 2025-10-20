@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api\Modules;
 use App\Models\ParentModule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
 
 class ParentModuleController
 {
@@ -47,9 +50,9 @@ class ParentModuleController
                     'status' => $module->status,
                     'moduleOrder' => $module->moduleOrder,
                     'link' => $module->link,
-                    'createdAt' => Carbon::parse($module->created_at)->toISOString(), // Convierte la fecha a Carbon
-                    'updatedAt' => Carbon::parse($module->updated_at)->toISOString(), // Convierte la fecha a Carbon
-                    'deletedAt' => $module->deleted_at ? Carbon::parse($module->deleted_at)->toISOString() : null, // Convierte la fecha a Carbon si existe
+                    'created_at' => Carbon::parse($module->created_at)->toISOString(), // Convierte la fecha a Carbon
+                    'updated_at' => Carbon::parse($module->updated_at)->toISOString(), // Convierte la fecha a Carbon
+                    'deleted_at' => $module->deleted_at ? Carbon::parse($module->deleted_at)->toISOString() : null, // Convierte la fecha a Carbon si existe
                 ];
             }),
 
@@ -84,9 +87,9 @@ class ParentModuleController
                 'status' => $module->status,  // Aquí ya está convertido a booleano
                 'moduleOrder' => $module->moduleOrder,
                 'link' => $module->link,
-                'createdAt' => $module->createdAt,  // Usando el accesor
-                'updatedAt' => $module->updatedAt,  // Usando el accesor
-                'deletedAt' => $module->deletedAt,  // Usando el accesor
+                'created_at' => $module->createdAt,  // Usando el accesor
+                'updated_at' => $module->updatedAt,  // Usando el accesor
+                'deleted_at' => $module->deletedAt,  // Usando el accesor
             ];
         });
         return response()->json($response);
@@ -138,18 +141,37 @@ class ParentModuleController
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'code' => 'nullable|string',
+            'title'    => 'required|string|max:100',
+            'code'     => 'required|string|max:10|unique:parent_modules,code',
             'subtitle' => 'required|string|max:100',
-            'type' => 'required|string|max:100',
-            'icon' => 'nullable|string|max:100',
-            'status' => 'required|boolean',
-            'moduleOrder' => 'required|integer',
-            'link' => 'required|string|max:500',
+            'status'   => 'required|integer',
+        ], [
+            'code.unique' => 'El código ingresado ya existe en el sistema.',
+            'code.required' => 'El campo código es obligatorio.',
         ]);
 
-        $module = ParentModule::create($validated);
-        return response()->json($module);
+        // Calcular el próximo orden automáticamente
+        $nextOrder = (int) (ParentModule::max('moduleOrder') ?? 0) + 1;
+
+        // Defaults que SIEMPRE se rellenan en el backend
+        $defaults = [
+            'type'        => 'collapsable',
+            'icon'        => 'heroicons_outline:user-group',
+            'moduleOrder' => $nextOrder,
+            'link'        => '/example',
+        ];
+
+        // Merge entre lo que manda el cliente y lo que define el backend
+        $payload = array_merge($defaults, Arr::only($validated, [
+            'title',
+            'code',
+            'subtitle',
+            'status'
+        ]));
+
+        $module = ParentModule::create($payload);
+
+        return response()->json($module, 201);
     }
 
     /**
@@ -168,21 +190,36 @@ class ParentModuleController
     {
         $module = ParentModule::findOrFail($id);
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'code' => 'nullable|string',
-            'subtitle' => 'required|string|max:100',
-            'type' => 'required|string|max:100',
-            'icon' => 'nullable|string|max:100',
-            'status' => 'required|boolean',
+        $validator = Validator::make($request->all(), [
+            'title'       => 'required|string|max:100',
+            'code'        => ['nullable', 'string', 'max:10', Rule::unique('parent_modules', 'code')->ignore($id)],
+            'subtitle'    => 'required|string|max:100',
+            'type'        => 'required|string|max:100',
+            'icon'        => 'nullable|string|max:100',
+            'status'      => 'required|integer|in:0,1',   // <- era boolean, mejor int 0/1 para tu caso
             'moduleOrder' => 'required|integer',
-            'link' => 'required|string|max:500',
+            'link'        => 'required|string|max:500',
+        ], [
+            'code.unique'   => 'El código ingresado ya existe en el sistema.',
+            'code.max'      => 'El código no debe exceder 10 caracteres.',
+            'status.in'     => 'El estado debe ser 0 (inactivo) o 1 (activo).',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error de validación.',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+
+        // Actualiza y devuelve el registro refrescado
         $module->update($validated);
 
-        return response()->json($module);
+        return response()->json($module->refresh());
     }
+
 
     /**
      * DELETE /parent-module/{id}

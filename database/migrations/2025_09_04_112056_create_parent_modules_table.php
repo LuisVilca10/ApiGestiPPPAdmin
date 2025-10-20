@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('parent_modules', function (Blueprint $table) {
             $table->id();
             $table->string('title', 100);
-            $table->string('code')->nullable();
+            $table->string('code')->unique();
             $table->string('subtitle', 100);
             $table->string('type', 100);
             $table->string('icon', 100)->nullable();

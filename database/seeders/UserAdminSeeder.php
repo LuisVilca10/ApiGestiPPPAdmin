@@ -42,6 +42,6 @@ class UserAdminSeeder extends Seeder
         );
 
         // Asignar roles a Alex
-        $alex->assignRole('Admin', 'Estudiante');
+        $alex->assignRole('Estudiante');
     }
 }

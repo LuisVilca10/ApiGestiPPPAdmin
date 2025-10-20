@@ -12,9 +12,12 @@ class Role extends SpatieRole
         'description',
     ];
 
-    // Relación con módulos
+    /**
+     * Relación muchos a muchos con Module a través de module_role
+     */
     public function modules()
     {
         return $this->belongsToMany(Module::class, 'module_role', 'role_id', 'module_id');
+        // ->withPivot(['role_id', 'module_id']); // opcional, si los necesitas
     }
 }

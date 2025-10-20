@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api\Modules;
 use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\ParentModule;
+use App\Models\Role;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ModuleController
@@ -24,12 +26,9 @@ class ModuleController
         $size = (int) $request->input('size', 10);
         $name = $request->input('name');
 
-        $query = Module::query(); // si no necesitas el padre en la respuesta
+        // Cargamos el parentModule (y opcionalmente limitamos columnas)
+        $query = Module::with('parentModule');
 
-        // Si quieres igualmente cargar el padre (aunque no lo devolvamos), puedes dejar:
-        // $query = Module::with('parentModule');
-
-        // Búsqueda tipo "index": varios campos, agrupados en un closure
         if (!empty($name)) {
             $query->where(function ($q) use ($name) {
                 $q->where('title', 'like', "%{$name}%")
@@ -40,11 +39,24 @@ class ModuleController
             });
         }
 
-        // Paginación estilo listPaginate (sin ajustar page aquí; Laravel usa 1-based)
         $data = $query->paginate($size);
 
-        // Contenido estilo listPaginate con fechas ISO y status como int
         $content = $data->getCollection()->map(function ($module) {
+            $parent = $module->parentModule ? [
+                'id'          => $module->parentModule->id,
+                'title'       => $module->parentModule->title,
+                'subtitle'    => $module->parentModule->subtitle,
+                'type'        => $module->parentModule->type,
+                'code'        => $module->parentModule->code,
+                'icon'        => $module->parentModule->icon,
+                'status'      => $module->parentModule->status,
+                'moduleOrder' => $module->parentModule->moduleOrder,
+                'link'        => $module->parentModule->link,
+                'created_at'   => optional($module->parentModule->created_at)->toISOString(),
+                'updated_at'   => optional($module->parentModule->updated_at)->toISOString(),
+                'deleted_at'   => $module->parentModule->deleted_at ? optional($module->parentModule->deleted_at)->toISOString() : null,
+            ] : null;
+
             return [
                 'id'          => $module->id,
                 'title'       => $module->title,
@@ -52,145 +64,140 @@ class ModuleController
                 'subtitle'    => $module->subtitle,
                 'type'        => $module->type,
                 'icon'        => $module->icon,
-                'status'      => (int) $module->status,
+                'status'      => $module->status,
                 'moduleOrder' => $module->moduleOrder,
                 'link'        => $module->link,
-                'createdAt'   => optional($module->created_at)->toISOString(),
-                'updatedAt'   => optional($module->updated_at)->toISOString(),
-                'deletedAt'   => $module->deleted_at ? optional($module->deleted_at)->toISOString() : null,
+                'parentModule' => $parent,
+                'created_at'   => optional($module->created_at)->toISOString(),
+                'updated_at'   => optional($module->updated_at)->toISOString(),
+                'deleted_at'   => $module->deleted_at ? optional($module->deleted_at)->toISOString() : null,
             ];
         })->values();
 
-        // Respuesta exactamente como listPaginate (currentPage en 0-based)
         return response()->json([
             'totalPages'    => $data->lastPage(),
-            'currentPage'   => $data->currentPage() - 1,
+            'currentPage'   => $data->currentPage() - 1, // 0-based
             'totalElements' => $data->total(),
             'content'       => $content,
         ]);
     }
 
 
+
     /**
      * GET /module/menu
-     * Simula lo que sería un DTO de tipo menú
+     * Devuelve el menú de módulos basado en los roles del usuario autenticado
      */
     public function menu()
     {
-
-        Log::info("Menu API llamado");
-
         $user = Auth::user();
-        Log::info("Usuario autenticado:", ['user' => $user ? $user->id : null]);
-
         if (!$user) {
-            Log::warning("Usuario no autenticado intenta acceder al menu");
             return response()->json(['message' => 'Usuario no autenticado'], 401);
         }
 
-        // Verificar que el método roles existe
         if (!method_exists($user, 'roles')) {
-            Log::error("El método roles() NO existe en el modelo User");
             return response()->json(['message' => 'Error interno: roles no definidos en usuario'], 500);
-        } else {
-            Log::info("Método roles() existe en User");
         }
 
-        // Obtener IDs de los roles del usuario
         try {
             $userRoleIds = $user->roles->pluck('id')->toArray();
-            Log::info("Roles del usuario obtenidos:", ['role_ids' => $userRoleIds]);
         } catch (\Exception $e) {
-            Log::error("Error al obtener roles del usuario: " . $e->getMessage());
             return response()->json(['message' => 'Error al obtener roles del usuario'], 500);
         }
 
-        // Consulta con filtro por roles
         try {
-            // Filtramos los módulos que el usuario puede ver según sus roles
-            $modules = ParentModule::whereHas('modules.roles', function ($query) use ($userRoleIds) {
-                $query->whereIn('roles.id', $userRoleIds);
-            })
+            $modules = ParentModule::query()
+                ->where('status', 1)                 // si quieres solo activos
+                ->where('type', 'collapsable')       // si tus padres siempre son 'collapsable'
                 ->with(['modules' => function ($query) use ($userRoleIds) {
-                    $query->whereHas('roles', function ($q) use ($userRoleIds) {
-                        $q->whereIn('roles.id', $userRoleIds);
-                    });
-                }])->get();
-
-            Log::info("Módulos obtenidos:", ['count' => $modules->count()]);
+                    $query
+                        // ->where('status', 1)          // (opcional) si manejas estado en hijos
+                        ->whereHas('roles', function ($q) use ($userRoleIds) {
+                            $q->whereIn('roles.id', $userRoleIds);
+                        })
+                        ->orderBy('moduleOrder');
+                }])
+                ->orderBy('moduleOrder')
+                ->get();
         } catch (\Exception $e) {
-            Log::error("Error al obtener módulos filtrados por roles: " . $e->getMessage());
             return response()->json(['message' => 'Error al obtener módulos'], 500);
         }
 
         // Formatear los módulos para el menú
         $menu = $modules->map(function ($parent) {
             return [
-                'id' => $parent->id,
-                'title' => $parent->title,
-                'subtitle' => $parent->subtitle,
-                'type' => $parent->type,
-                'icon' => $parent->icon,
-                'link' => $parent->link,
+                'id'          => $parent->id,
+                'title'       => $parent->title,
+                'subtitle'    => $parent->subtitle,
+                'type'        => $parent->type,
+                'icon'        => $parent->icon,
+                'link'        => $parent->link,
                 'moduleOrder' => $parent->moduleOrder,
-                'createdAt' => $parent->created_at,
-                'updatedAt' => $parent->updated_at,
-                'deletedAt' => $parent->deleted_at,
-                'children' => $parent->modules->map(function ($mod) {
+                'createdAt'   => $parent->created_at,
+                'updatedAt'   => $parent->updated_at,
+                'deletedAt'   => $parent->deleted_at,
+                'children'    => $parent->modules->map(function ($mod) {
                     return [
-                        'id' => $mod->id,
-                        'title' => $mod->title,
-                        'subtitle' => $mod->subtitle,
-                        'type' => $mod->type,
-                        'icon' => $mod->icon,
-                        'link' => $mod->link,
+                        'id'          => $mod->id,
+                        'title'       => $mod->title,
+                        'subtitle'    => $mod->subtitle,
+                        'type'        => $mod->type,
+                        'icon'        => $mod->icon,
+                        'link'        => $mod->link,
                         'moduleOrder' => $mod->moduleOrder,
-                        'createdAt' => $mod->created_at,
-                        'updatedAt' => $mod->updated_at,
-                        'deletedAt' => $mod->deleted_at,
+                        'created_at'  => $mod->created_at,
+                        'updated_at'  => $mod->updated_at,
+                        'deleted_at'  => $mod->deleted_at,
                     ];
-                }),
+                })->values(),
             ];
-        });
-
-        Log::info("Menú formateado, listo para enviar.");
+        })->values();
 
         return response()->json($menu);
     }
 
+
     /**
-     * POST /parent-module
+     * POST /module
      */
     public function store(Request $request)
     {
-        // Validar solo los campos que vienen del cliente
-        $validated = $request->validate([
-            'title'    => 'required|string|max:100',
-            'code'     => 'required|string|max:10',
-            'subtitle' => 'required|string|max:100',
-            'status'   => 'required|boolean',
+        $validator = Validator::make($request->all(), [
+            'title'          => 'required|string|max:100',
+            'subtitle'       => 'required|string|max:100',
+            'code'           => 'nullable|string|max:100|unique:modules,code',
+            'status'         => 'required|integer',
+            'link'           => 'required|string|max:500',
+            'parentModuleId' => 'required|integer|exists:parent_modules,id',
         ]);
 
-        // Calcular el próximo orden automáticamente
-        $nextOrder = (int) (ParentModule::max('moduleOrder') ?? 0) + 1;
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-        // Defaults que SIEMPRE se rellenan en el backend
-        $defaults = [
-            'type'        => 'collapsable',
-            'icon'        => 'heroicons_outline:user-group',
-            'moduleOrder' => $nextOrder,
-            'link'        => '/example',
-        ];
+        $parentId = (int) $request->input('parentModuleId');
 
-        // Merge entre lo que manda el cliente y lo que define el backend
-        $payload = array_merge($defaults, Arr::only($validated, [
-            'title',
-            'code',
-            'subtitle',
-            'status'
-        ]));
+        $module = DB::transaction(function () use ($request, $parentId) {
+            // Bloqueo para evitar condiciones de carrera al calcular el order
+            $lastOrder = Module::where('parent_module_id', $parentId)
+                ->lockForUpdate()
+                ->max('moduleOrder');
 
-        $module = ParentModule::create($payload);
+            $nextOrder = $lastOrder ? ($lastOrder + 1) : 1;
+
+            return Module::create([
+                'title'            => $request->input('title'),
+                'subtitle'         => $request->input('subtitle'),
+                'code'             => $request->input('code'),
+                'status'           => (int) $request->input('status'),
+                'link'             => $request->input('link'),
+                'parent_module_id' => $parentId,
+                'moduleOrder'      => $nextOrder,
+                // Defaults forzados
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:folder-open',
+            ]);
+        });
 
         return response()->json($module, 201);
     }
@@ -233,20 +240,25 @@ class ModuleController
      * GET /module/modules-selected/roleId/{roleId}/parentModuleId/{parentModuleId}
      */
     public function modulesSelected($roleId, $parentModuleId)
-
     {
-        $modules = Module::where('parent_module_id', $parentModuleId)->get();
+        $role = Role::with('modules')->findOrFail($roleId);
+        $selectedIds = $role->modules->pluck('id')->toArray();
 
-        $response = $modules->map(function ($mod) {
+        $modules = Module::where('parent_module_id', $parentModuleId)
+            ->orderBy('moduleOrder')
+            ->get();
+
+        $response = $modules->map(function ($mod) use ($selectedIds) {
             return [
-                'id' => $mod->id,
-                'title' => $mod->title,
-                'selected' => false,
+                'id'       => $mod->id,
+                'title'    => $mod->title,
+                'selected' => in_array($mod->id, $selectedIds),
             ];
         });
 
         return response()->json($response);
     }
+
 
     /**
      * GET /module/role/{roleId}
@@ -254,7 +266,7 @@ class ModuleController
      */
     public function getModulesByRole($roleId)
     {
-        $role = \App\Models\Role::with('modules')->findOrFail($roleId);
+        $role = Role::with('modules')->findOrFail($roleId);
 
         return response()->json([
             'role'    => $role->name,
@@ -276,25 +288,61 @@ class ModuleController
     {
         $module = Module::findOrFail($id);
 
-        $request->merge([
-            'parent_module_id' => $request->input('parentModuleId')
+        $validator = Validator::make($request->all(), [
+            'title'          => 'required|string|max:100',
+            'subtitle'       => 'required|string|max:100',
+            'code'           => 'nullable|string|max:100|unique:modules,code,' . $id,
+            'status'         => 'required|integer',
+            'link'           => 'required|string|max:500',
+            'parentModuleId' => 'required|integer|exists:parent_modules,id',
         ]);
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'subtitle' => 'required|string|max:100',
-            'type' => 'required|string|max:100',
-            'code' => 'nullable|string',
-            'icon' => 'nullable|string|max:100',
-            'status' => 'required|boolean',
-            'moduleOrder' => 'required|integer',
-            'link' => 'required|string|max:500',
-            'parent_module_id' => 'required|uuid|exists:parent_modules,id',
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $oldParentId = (int) $module->parent_module_id;
+        $newParentId = (int) $request->input('parentModuleId');
+
+        // Calcula nuevo order SOLO si cambia de padre
+        if ($newParentId !== $oldParentId) {
+            $updated = DB::transaction(function () use ($request, $module, $newParentId) {
+                $lastOrder = Module::where('parent_module_id', $newParentId)
+                    ->lockForUpdate()
+                    ->max('moduleOrder');
+                $nextOrder = $lastOrder ? ($lastOrder + 1) : 1;
+
+                $module->update([
+                    'title'            => $request->input('title'),
+                    'subtitle'         => $request->input('subtitle'),
+                    'code'             => $request->input('code'),
+                    'status'           => (int) $request->input('status'),
+                    'link'             => $request->input('link'),
+                    'parent_module_id' => $newParentId,
+                    'moduleOrder'      => $nextOrder, // solo cambia si cambió el padre
+                    'type'             => 'basic',
+                    'icon'             => 'heroicons_outline:folder-open',
+                ]);
+
+                return $module->fresh('parentModule');
+            });
+
+            return response()->json($updated);
+        }
+
+        // Si NO cambió el padre: conservar el moduleOrder actual (no tocarlo)
+        $module->update([
+            'title'            => $request->input('title'),
+            'subtitle'         => $request->input('subtitle'),
+            'code'             => $request->input('code'),
+            'status'           => (int) $request->input('status'),
+            'link'             => $request->input('link'),
+            'parent_module_id' => $newParentId,
+            'type'             => 'basic',
+            'icon'             => 'heroicons_outline:folder-open',
         ]);
 
-        $module->update($validated);
-
-        return response()->json($module);
+        return response()->json($module->fresh('parentModule'));
     }
 
     /**
@@ -307,29 +355,5 @@ class ModuleController
 
         $data = Module::paginate(20);
         return response()->json($data);
-    }
-
-    /**
-     * POST /module/assign
-     * Asigna módulos a un rol
-     */
-    public function assignModulesToRole(Request $request)
-    {
-        $validated = $request->validate([
-            'roleId'   => 'required|exists:roles,id',
-            'modules'  => 'required|array',
-            'modules.*' => 'exists:modules,id',
-        ]);
-
-        $role = \App\Models\Role::findOrFail($validated['roleId']);
-
-        // Sincroniza los módulos con el rol (elimina anteriores y guarda los nuevos)
-        $role->modules()->sync($validated['modules']);
-
-        return response()->json([
-            'message' => 'Módulos asignados correctamente',
-            'role'    => $role->name,
-            'modules' => $role->modules()->get(['id', 'title']),
-        ]);
     }
 }

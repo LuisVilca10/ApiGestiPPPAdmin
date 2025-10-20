@@ -10,6 +10,7 @@ use App\Traits\TokenHelper;
 use App\Traits\ValidatorTrait;
 use App\Traits\RolePermissions;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
@@ -58,40 +59,129 @@ class AuthController
         ], 'Usuario registrado correctamente', 201);
     }
 
+    /**
+     * Login user with specific error handling
+     */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'login'    => ['required', 'string'], // email o username
-            'password' => ['required', 'string'],
-        ]);
-
-        // aceptar email o username
-        $user = User::where('email', $credentials['login'])
-            ->orWhere('username', $credentials['login'])
-            ->first();
-
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['message' => 'Credenciales incorrectas'], 401);
-        }
-
         try {
-            $token = JWTAuth::fromUser($user);
-        } catch (JWTException $e) {
-            return response()->json(['message' => 'No se pudo crear el token'], 500);
-        }
+            // Validación básica
+            $validation = $this->validateRequest($request, [
+                'login'    => 'required|string',
+                'password' => 'required|string',
+            ]);
 
-        return response()->json([
-            'message' => 'Inicio de sesión correcto',
-            'data'    => [
-                'token'       => $token,
-                'expires_at'  => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
-                'user'        => $user->only(['id', 'name', 'last_name', 'username', 'email']),
-                'roles'       => $user->getRoleNames(),
+            if ($validation->fails()) {
+                return $this->validationErrorResponse($validation->errors());
+            }
+
+            $login = $request->login;
+            $password = $request->password;
+
+            Log::info("Intento de login iniciado para: {$login}");
+
+            // 1. Primero verificar si el usuario existe
+            $user = User::where('email', $login)
+                ->orWhere('username', $login)
+                ->first();
+
+            // Caso 1: Usuario no existe
+            if (!$user) {
+                Log::warning("Intento de login con usuario inexistente: {$login}");
+                return $this->error('El usuario no existe. Verifica tu nombre de usuario o email.', 401);
+            }
+
+            // 2. Verificar si la cuenta está activa (si tienes campo status)
+            if (isset($user->status) && $user->status != 1) {
+                Log::warning("Intento de login con cuenta inactiva: {$user->username}");
+                return $this->error('Tu cuenta está desactivada. Contacta al administrador.', 403);
+            }
+
+            // 3. Verificar contraseña
+            if (!Hash::check($password, $user->password)) {
+                Log::warning("Contraseña incorrecta para usuario: {$user->username}");
+
+                // Podrías agregar lógica para contar intentos fallidos aquí
+                $this->logFailedAttempt($user);
+
+                return $this->error('La contraseña es incorrecta. Intenta nuevamente.', 401);
+            }
+
+            // 4. Si llegamos aquí, las credenciales son correctas
+            // Generar token JWT
+            try {
+                $token = JWTAuth::fromUser($user);
+
+                // Limpiar intentos fallidos si existían
+                $this->clearFailedAttempts($user);
+            } catch (JWTException $e) {
+                Log::error("Error JWT al generar token para: {$user->username} - " . $e->getMessage());
+                return $this->error('Error interno del servidor. Intenta más tarde.', 500);
+            }
+
+            Log::info("Login exitoso: {$user->username} - IP: " . $request->ip());
+
+            // Respuesta de éxito
+            return $this->successResponse([
+                'token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => config('jwt.ttl') * 60,
+                'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'last_name' => $user->last_name,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'photo_url' => $user->photo_url,
+                ],
+                'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
-            ]
-        ]);
+            ], '¡Bienvenido! Inicio de sesión exitoso.');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            Log::error('Error inesperado en login: ' . $e->getMessage());
+            return $this->error('Error interno del servidor. Por favor, intenta más tarde.', 500);
+        }
     }
 
+    /**
+     * Log failed login attempts (opcional - para seguridad)
+     */
+    private function logFailedAttempt(User $user)
+    {
+        try {
+            // Puedes guardar esto en la base de datos si quieres
+            Log::warning("Intento fallido de login", [
+                'user_id' => $user->id,
+                'username' => $user->username,
+                'attempt_time' => now(),
+                'ip' => request()->ip()
+            ]);
+
+            // Opcional: Incrementar contador de intentos fallidos
+            // $user->increment('failed_login_attempts');
+
+        } catch (\Exception $e) {
+            Log::error('Error al registrar intento fallido: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clear failed attempts on successful login
+     */
+    private function clearFailedAttempts(User $user)
+    {
+        try {
+            // Opcional: Resetear contador de intentos fallidos
+            // $user->update(['failed_login_attempts' => 0]);
+
+            Log::info("Intentos fallidos reseteados para: {$user->username}");
+        } catch (\Exception $e) {
+            Log::error('Error al limpiar intentos fallidos: ' . $e->getMessage());
+        }
+    }
     public function getCurrentUser(Request $request)
     {
         try {
@@ -164,7 +254,7 @@ class AuthController
                 'code' => 'sometimes|nullable|string|max:255',
                 'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
                 'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-                'imagen_url' => 'sometimes|nullable|string|max:500', // Validar la URL de la imagen
+                'photo_url' => 'sometimes|nullable|string|max:500', // Validar la URL de la imagen
             ];
 
             // Si se está cambiando la contraseña, agregar validaciones adicionales
@@ -211,8 +301,8 @@ class AuthController
                 $updateData['email'] = $request->email;
             }
 
-            if ($request->has('imagen_url')) {
-                $updateData['imagen_url'] = $request->imagen_url;
+            if ($request->has('photo_url')) {
+                $updateData['photo_url'] = $request->photo_url;
             }
 
             if ($request->filled('new_password')) {
@@ -233,7 +323,7 @@ class AuthController
 
             // Preparar respuesta
             $responseData = [
-                'user' => $user->only(['id', 'name', 'last_name', 'code', 'username', 'email', 'imagen_url']),
+                'user' => $user->only(['id', 'name', 'last_name', 'code', 'username', 'email', 'photo_url']),
             ];
 
             if ($newToken) {

@@ -24,6 +24,7 @@ class ParentModule extends Model
 
     protected $casts = [
         'moduleOrder' => 'integer',
+        'status'      => 'integer',
     ];
 
     public function modules()

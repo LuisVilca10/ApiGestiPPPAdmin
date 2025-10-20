@@ -17,7 +17,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // ], function ($router) {
 //     Route::post('/register', [AuthController::class, 'register'])->name('register');
 
-   
+
 // });
 
 
@@ -54,22 +54,34 @@ Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
         Route::get('/{id}', [ModuleController::class, 'show']);  // Ver módulo específico
         Route::put('/{id}', [ModuleController::class, 'update']);  // Actualizar módulo
         Route::delete('/{id}', [ModuleController::class, 'destroy']);  // Eliminar módulo
-        Route::post('/assign', [ModuleController::class, 'assignModulesToRole']); // Asignar módulos a un rol
         Route::get('/role/{roleId}', [ModuleController::class, 'getModulesByRole']);
+        Route::get('/modules-selected/role/{roleId}/parent/{parentModuleId}', [ModuleController::class, 'modulesSelected']);
     });
 });
 
 // **********************************************RUTAS DE ROLES ********************************************************************
 
-Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
-    Route::get('/', [RoleController::class, 'index']);
-    Route::get('/{id}', [RoleController::class, 'show']);
-    Route::middleware('permission:editar_roles')->post('/', [RoleController::class, 'store']);
-    Route::middleware('permission:editar_roles')->put('/{id}', [RoleController::class, 'update']);
-    Route::middleware('permission:editar_roles')->delete('/{id}', [RoleController::class, 'destroy']);
-    Route::middleware('permission:editar_roles')->post('/assign-role/{userId}', [RoleController::class, 'assignRole']);
-    Route::middleware('role:admin')->post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
-});
+Route::prefix('role')
+    ->middleware(['auth:api', 'role:Admin'])
+    ->group(function () {
+
+        // Lectura
+        Route::get('/', [RoleController::class, 'index']);
+        Route::get('/{id}', [RoleController::class, 'show']);
+        Route::middleware('permission:editar_roles')->group(function () {
+            Route::post('/', [RoleController::class, 'store']);
+            Route::put('/{id}', [RoleController::class, 'update']);
+            Route::delete('/{id}', [RoleController::class, 'destroy']);
+
+            // Asignar roles a usuarios
+            Route::post('/assign-role/{userId}', [RoleController::class, 'assignRole']);
+
+            // Asignar módulos a un rol
+            Route::post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
+            Route::get('/{roleId}/modules', [RoleController::class, 'getRoleModules']);
+        });
+    });
+
 
 
 // // Rutas de Logueo y Registro

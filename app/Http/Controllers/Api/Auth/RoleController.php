@@ -6,6 +6,7 @@ use App\Models\Module;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RoleController
 {
@@ -36,16 +37,44 @@ class RoleController
 
     public function store(Request $request)
     {
+        // Guard por defecto (ej: 'web') si no te lo mandan
+        $guard = $request->input('guard_name', config('auth.defaults.guard', 'api'));
+
+        // Validación: nombre único por guard (Spatie usa name+guard_name como clave lógica)
         $validated = $request->validate([
-            'name' => 'required|string|unique:roles,name|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'description' => ['nullable', 'string', 'max:255'],
+            // guard_name opcional (se forzará al $guard calculado)
+            'guard_name'  => ['nullable', 'string', 'max:50'],
         ]);
 
-        $role = Role::create(['name' => $validated['name']]);
+        // Crear role
+        $role = Role::create([
+            'name'       => $validated['name'],
+            'guard_name' => $guard,
+            'description' => $validated['description'] ?? null,
+        ]);
 
-        return response()->json([
-            'role' => $role,
-            'message' => 'Rol creado exitosamente',
-        ], 201);
+        // DTO con camelCase para el front Kotlin
+        $dto = [
+            'id'         => $role->id,
+            'name'       => $role->name,
+            'guard_name' => $role->guard_name,
+            'description' => $role->description,
+            'createdAt'  => $role->created_at?->toISOString(),     // "2025-10-05T21:19:28.000000Z"
+            'updatedAt'  => $role->updated_at?->toISOString(),
+            'deletedAt'  => null, // Si no usas SoftDeletes en roles, siempre null
+        ];
+
+        // Opción A: devolver el objeto directo (más simple para tu parser)
+        return response()->json($dto, 201);
+
+        // === Opción B: si quieres mantener la envoltura { role: {...} } ===
+        // return response()->json(['role' => $dto], 201);
     }
 
     public function update(Request $request, $id)
@@ -57,18 +86,19 @@ class RoleController
                 'message' => 'Rol no encontrado',
             ], 404);
         }
-
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'description' => 'nullable|string|max:500',
         ]);
 
-        $role->update(['name' => $validated['name']]);
+        $role->update([
+            'description' => $validated['description'] ?? null,
+        ]);
 
         return response()->json([
             'role' => $role,
-            'message' => 'Rol actualizado exitosamente',
         ]);
     }
+
 
 
     public function destroy($id)
@@ -114,40 +144,84 @@ class RoleController
 
     public function assignModulesToRole(Request $request, $roleId)
     {
-        // Validación de los módulos enviados (verificar que sean UUIDs válidos)
-        $request->validate([
-            'modules' => 'required|array',
-            'modules.*' => 'uuid|exists:modules,id', // Validar que cada módulo sea un UUID y exista en la tabla 'modules'
+        // Validación alineada a tu BD (IDs enteros) y con 'mode'
+        $validated = $request->validate([
+            'modules'   => 'required|array',
+            'modules.*' => 'integer|exists:modules,id',
+            'mode'      => 'sometimes|string|in:replace,add,remove',
         ]);
 
-        // Buscar el rol por ID
+        // Rol
         $role = Role::find($roleId);
-
         if (!$role) {
-
             return response()->json(['message' => 'Rol no encontrado'], 404);
         }
 
+        $mode = $validated['mode'] ?? 'replace';
 
-        // Obtener los módulos por sus IDs UUID
-        $modules = Module::whereIn('id', $request->modules)->get();
+        DB::transaction(function () use ($role, $validated, $mode) {
+            if ($mode === 'add') {
+                // Agrega sin remover lo ya asignado
+                $role->modules()->syncWithoutDetaching($validated['modules']);
+            } elseif ($mode === 'remove') {
+                // Quita SOLO los enviados
+                $role->modules()->detach($validated['modules']);
+            } else {
+                // replace (por defecto): reemplaza todo por lo enviado
+                $role->modules()->sync($validated['modules']);
+            }
+        });
 
-        if ($modules->isEmpty()) {
+        // Traer módulos actuales del rol (evita ambigüedad)
+        $modules = $role->modules()
+            ->select('modules.id', 'modules.title', 'modules.code')
+            ->orderBy('modules.title')
+            ->get();
 
-            return response()->json(['message' => 'Módulos no encontrados'], 422);
-        }
-
-        // Asignar los módulos al rol
-        foreach ($modules as $module) {
-            // Sincronizar los módulos con el rol (sin eliminar los módulos previamente asignados)
-            $role->modules()->syncWithoutDetaching([$module->id]);
-        }
-
-        // Devolver la respuesta con los módulos asignados
         return response()->json([
-            'message' => 'Módulos asignados exitosamente',
-            'role' => $role,
-            'modules' => $modules->pluck('id'),
+            'message' => $mode === 'add' ? 'Módulos añadidos correctamente'
+                : ($mode === 'remove' ? 'Módulos removidos correctamente'
+                    : 'Módulos asignados correctamente'),
+            'mode'    => $mode,
+            'role'    => $role->name,
+            'modules' => $modules,
+        ]);
+    }
+
+    public function getRoleModules(Request $request, $roleId)
+    {
+        $role = Role::with('modules:id')->find($roleId);
+        if (!$role) {
+            return response()->json(['message' => 'Rol no encontrado'], 404);
+        }
+
+        $parentModuleId = $request->query('parentModuleId');
+
+        // IDs ya asignados al rol
+        $assignedIds = $role->modules->pluck('id')->all();
+
+        // Base query: todos los módulos (o filtrados por padre si viene)
+        $query = Module::query()->select('id', 'title', 'parent_module_id');
+        if (!empty($parentModuleId)) {
+            $query->where('parent_module_id', (int) $parentModuleId);
+        }
+
+        // Orden consistente
+        $modules = $query
+            ->orderBy('moduleOrder')
+            ->orderBy('title')
+            ->get();
+
+        // Formato único para la UI (selector con selected=true/false)
+        $items = $modules->map(fn($m) => [
+            'id'       => $m->id,
+            'title'    => $m->title,
+            'selected' => in_array($m->id, $assignedIds, true),
+        ])->values();
+
+        return response()->json([
+            'role'     => $role->name,
+            'items'    => $items,
         ]);
     }
 }
