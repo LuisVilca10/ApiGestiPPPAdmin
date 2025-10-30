@@ -12,28 +12,35 @@ class Practice extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name_empresa',
+        'company_name',        // o name_empresa si prefieres español
         'ruc',
-        'name_represent',
-        'lastname_represent',
-        'trate_represent',
-        'phone_represent',
-        'activity_student',
-        'hourse_practice',
-        'student_profile_id',
+        'representative_name', // name_represent
+        'representative_lastname', // lastname_represent
+        'represent_title',     // trate_represent
+        'represent_phone',     // phone_represent
+        'student_activity',    // activity_student
+        'hours_practice',      // hourse_practice -> corregir si lo quieres hours_practice
+        'user_id',             // estudiante (FK -> users.id)
+        'start_date',
+        'end_date',
+        'status',
     ];
 
-    public function studentProfile()
+    // Estudiante (usuario) dueño de la práctica
+    public function student()
     {
-        return $this->belongsTo(StudentProfile::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
+
+    // Documentos de la práctica
     public function documents()
     {
         return $this->hasMany(Document::class);
     }
+
+    // Visitas relacionadas
     public function visits()
     {
         return $this->hasMany(Visit::class);
-    } // si las atas a práctica
-
+    }
 }

@@ -83,17 +83,25 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
-    public function studentProfile()
+    // Prácticas donde el usuario es el estudiante
+    public function practices()
     {
-        return $this->hasOne(StudentProfile::class);
+        return $this->hasMany(Practice::class, 'user_id');
     }
-    // si este user es estudiante
 
+    // Visitas que hizo (como visitante)
     public function visitsMade()
     {
         return $this->hasMany(Visit::class, 'visited_by');
     }
 
+    // Visitas donde fue el estudiante
+    public function visitsReceived()
+    {
+        return $this->hasMany(Visit::class, 'user_id');
+    }
+
+    // Documentos subidos por el usuario
     public function uploadedDocuments()
     {
         return $this->hasMany(Document::class, 'uploaded_by');

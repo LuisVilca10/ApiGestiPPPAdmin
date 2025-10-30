@@ -13,15 +13,14 @@ return new class extends Migration
     {
         Schema::create('practices', function (Blueprint $table) {
             $table->id();
-            // Relación: esta práctica es del estudiante (no del user)
-            $table->foreignId('student_profile_id')->constrained()->cascadeOnDelete();
 
             // Empresa
-            $table->string('company_name');              // antes name_empresa
-            $table->string('ruc', 11);                  // Perú: 11 dígitos, guárdalo como string
-            // Representante
-            $table->string('represent_first_name');
-            $table->string('represent_last_name');
+            $table->string('company_name');
+            $table->string('ruc', 11)->unique(); // RUC único (11 dígitos)
+
+            // Representante legal
+            $table->string('representative_first_name')->nullable();
+            $table->string('representative_last_name')->nullable();
             $table->enum('represent_title', [
                 'Dr',
                 'Lic',
@@ -35,29 +34,48 @@ return new class extends Migration
                 'Tec',
                 'MBA',
                 'Otros'
-            ]);
-            $table->string('represent_phone', 20);      // permite + prefijos
+            ])->nullable();
+            $table->string('represent_phone', 20)->nullable();
+            $table->string('represent_email')->nullable();
 
-            // Info de la práctica
-            $table->string('student_activity');         // antes activity_student
-            $table->unsignedSmallInteger('required_hours'); // antes hourse_practice
+            // Actividad y detalles de la práctica
+            $table->text('student_activity')->nullable(); // descripción larga
+            $table->unsignedInteger('hours_practice')->default(0); // horas (sin signo)
 
-            $table->string('name_empresa');
-            $table->string('name_represent');
-            $table->string('lastname_represent');
-            $table->string('trate_represent');
-            $table->string('phone_represent');
-            $table->string('activity_student');
-            $table->integer('hourse_practice');
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            // Supervisor interno en la empresa (si aplica)
+            $table->string('supervisor_name')->nullable();
+            $table->string('supervisor_phone', 20)->nullable();
+            $table->string('supervisor_email')->nullable();
+
+            // Ubicación / contacto de la empresa
+            $table->string('company_address')->nullable();
+
+            // Fechas de la práctica
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+
+            // Estado de la práctica (workflow)
+            $table->enum('status', ['pending', 'approved', 'in_progress', 'completed', 'cancelled'])
+                ->default('pending');
+
+            // Documentos / evidencias (ruta a archivos)
+            $table->string('agreement_path')->nullable(); // convenio / documento firmado
+            $table->string('report_path')->nullable(); // informe final (opcional)
+
+            // Relación con usuario (estudiante)
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+
+            // Auditoría
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['student_profile_id']);
-            $table->index(['ruc']);
+            // Índices útiles
+            $table->index('user_id');
+            $table->index('company_name'); // opcional: búsquedas por nombre de empresa
+
         });
     }
+
 
     /**
      * Reverse the migrations.

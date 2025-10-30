@@ -14,14 +14,21 @@ class Document extends Model
     protected $fillable = [
         'document_type',
         'document_path',
+        'original_name',
+        'mime_type',
+        'size',
         'document_status',
-        'practice_id'
+        'practice_id',
+        'uploaded_by',
     ];
 
+    // Relación con Practice
     public function practice()
     {
         return $this->belongsTo(Practice::class);
     }
+
+    // Usuario que subió el documento
     public function uploader()
     {
         return $this->belongsTo(User::class, 'uploaded_by');

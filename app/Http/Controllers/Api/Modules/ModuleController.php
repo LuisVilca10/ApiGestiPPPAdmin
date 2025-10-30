@@ -178,7 +178,6 @@ class ModuleController
         $parentId = (int) $request->input('parentModuleId');
 
         $module = DB::transaction(function () use ($request, $parentId) {
-            // Bloqueo para evitar condiciones de carrera al calcular el order
             $lastOrder = Module::where('parent_module_id', $parentId)
                 ->lockForUpdate()
                 ->max('moduleOrder');
@@ -193,7 +192,6 @@ class ModuleController
                 'link'             => $request->input('link'),
                 'parent_module_id' => $parentId,
                 'moduleOrder'      => $nextOrder,
-                // Defaults forzados
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:folder-open',
             ]);
@@ -319,7 +317,7 @@ class ModuleController
                     'status'           => (int) $request->input('status'),
                     'link'             => $request->input('link'),
                     'parent_module_id' => $newParentId,
-                    'moduleOrder'      => $nextOrder, // solo cambia si cambió el padre
+                    'moduleOrder'      => $nextOrder,
                     'type'             => 'basic',
                     'icon'             => 'heroicons_outline:folder-open',
                 ]);

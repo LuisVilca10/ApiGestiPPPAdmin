@@ -14,27 +14,31 @@ return new class extends Migration
         Schema::create('visits', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('student_profile_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('visited_by')->constrained('users')->cascadeOnDelete(); // quién visita
-            $table->foreignId('practice_id')->nullable()->constrained()->nullOnDelete(); // si aplica
+            // columna user_id (estudiante) y FK a users
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
 
+            // quien visitó (usuario)
+            $table->foreignId('visited_by')->constrained('users')->cascadeOnDelete();
+
+            // práctica opcional
+            $table->foreignId('practice_id')->nullable()->constrained()->nullOnDelete();
+
+            // datos de la visita
             $table->dateTime('visit_date');
             $table->enum('visit_type', ['inicio', 'medio', 'final']);
             $table->text('visit_notes')->nullable();
-
-            // Si es calificación, puede ser entero/decimal; hazlo nullable
             $table->decimal('visit_result', 5, 2)->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['student_profile_id', 'visit_date']);
+            // índices útiles
+            $table->index('visit_date');
+            $table->index('user_id');
+            $table->index('visited_by');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('visits');

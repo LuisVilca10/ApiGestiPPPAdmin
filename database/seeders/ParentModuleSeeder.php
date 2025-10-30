@@ -21,7 +21,7 @@ class ParentModuleSeeder extends Seeder
                 'type'         => 'collapsable',
                 'icon'         => 'heroicons_outline:user-group',
                 'status'       => 1,
-                'moduleOrder'  => 1,
+                'moduleOrder'  => 2,
                 'link'         => '/example',
             ],
             [
@@ -31,7 +31,7 @@ class ParentModuleSeeder extends Seeder
                 'type'         => 'collapsable',
                 'icon'         => 'heroicons_outline:user-group',
                 'status'       => 1,
-                'moduleOrder'  => 2,
+                'moduleOrder'  => 3,
                 'link'         => '/example',
             ],
             [
@@ -41,7 +41,17 @@ class ParentModuleSeeder extends Seeder
                 'type'         => 'collapsable',
                 'icon'         => 'heroicons_outline:user-group',
                 'status'       => 1,
-                'moduleOrder'  => 3,
+                'moduleOrder'  => 4,
+                'link'         => '/example',
+            ],
+            [
+                'title'        => 'Dashboard',
+                'code'         => '04',
+                'subtitle'     => 'Dashboard Principal',
+                'type'         => 'collapsable',
+                'icon'         => 'heroicons_outline:user-group',
+                'status'       => 1,
+                'moduleOrder'  => 1,
                 'link'         => '/example',
             ]
         ];
