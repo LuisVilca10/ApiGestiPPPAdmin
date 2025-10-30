@@ -61,6 +61,7 @@ return new class extends Migration
             // Documentos / evidencias (ruta a archivos)
             $table->string('agreement_path')->nullable(); // convenio / documento firmado
             $table->string('report_path')->nullable(); // informe final (opcional)
+            $table->unsignedBigInteger('user_id');      // <-- añadir esto si falta
 
             // Relación con usuario (estudiante)
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
