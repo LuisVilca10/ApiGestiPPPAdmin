@@ -1,0 +1,10 @@
+vendor
+node_modules
+npm-debug.log
+.env
+storage/*.key
+storage/*.log
+.idea
+.vscode
+.DS_Store
+docker-compose.override.yml
