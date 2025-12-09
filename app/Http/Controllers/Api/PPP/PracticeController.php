@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api\PPP;
 
+use App\Models\Document;
 use App\Models\Practice;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -14,13 +16,17 @@ class PracticeController
     public function index(Request $request)
     {
 
+        $userId = Auth::id();
+
+        if (!$userId) {
+            return response()->json(['message' => 'No autorizado. Se requiere autenticación.'], 401);
+        }
         $size = $request->input('size', 10);
         $frontendPage = $request->input('page', 0);
         $laravelPage = $frontendPage + 1;
-
         $search = $request->input('search');
 
-        $query = Practice::withCount('documents');
+        $query = Practice::where('user_id', $userId)->withCount('documents');
 
         if ($search) {
             $query->where('name_empresa', 'like', "%{$search}%")
@@ -64,7 +70,6 @@ class PracticeController
                 'activity_student' => 'required|string|max:500',
                 'hourse_practice' => 'required|integer|min:1',
             ]);
-
             $userId = Auth::id();
             if (!$userId) {
                 return response()->json(['error' => 'Token inválido o usuario no autenticado'], 401);
@@ -72,15 +77,13 @@ class PracticeController
 
             $validated['user_id'] = $userId;
 
-            // 👇 Log para ver qué llega
-            Log::info('Datos validados:', $validated);
-
             $practice = Practice::create($validated);
 
-            // 👇 Confirmación de creación
-            Log::info('Práctica creada:', $practice->toArray());
-
             $estudiante = $practice->user;
+
+            if (!$estudiante) {
+                throw new \Exception("No se encontró el estudiante (User) para la práctica ID: " . $practice->id);
+            }
 
             $data = [
                 'estudiante' => $estudiante,
@@ -92,19 +95,26 @@ class PracticeController
             ];
 
             $pdf = Pdf::loadView('pdfs.carta_presentacion', $data);
-            $fileName = 'CARTA_PRESENTACION_' . $estudiante->codigo_universitario . '.pdf';
-            $filePath = 'public/practicas/' . $fileName;
+            $fecha_formateada = Carbon::now()->format('dmYHi');
+            $fileName = 'CARTA_PRESENTACION_' . $estudiante->codigo_universitario . '_' . $fecha_formateada . '.pdf';
+            $filePath = 'practicas/' . $fileName;
 
-            Storage::put($filePath, $pdf->output());
+
+            Storage::disk('public')->put($filePath, $pdf->output());
             $publicUrl = Storage::url($filePath);
 
-            Log::info('PDF guardado en: ' . $publicUrl);
-
-            return response()->json([
-                'message' => '✅ Práctica creada correctamente',
-                'practice' => $practice,
-                'pdf_url' => asset($publicUrl)
+            Document::create([
+                'practice_id' => $practice->id,
+                'document_type' => 'Carta Presentacion',
+                'document_path' => $filePath,
+                'document_status' => 'En Proceso',
             ]);
+
+            $practiceData = $practice->toArray();
+            $practiceData['pdf_url'] = $publicUrl;
+            unset($practiceData['user']);
+
+            return response()->json($practiceData, 201);
         } catch (\Throwable $th) {
             Log::error('❌ Error en creación de práctica:', [
                 'error' => $th->getMessage(),
