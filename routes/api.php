@@ -73,9 +73,10 @@ Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(
 
 // **********************************************RUTAS DE TRAMITES ********************************************************************
 
-Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+Route::prefix('practice')->group(function () {
     Route::post('/', [PracticeController::class, 'store']);
     Route::get('/', [PracticeController::class, 'index']);
+    Route::get('/documents/{id}', [PracticeController::class, 'DocumentsByPractice']);
 });
 
 

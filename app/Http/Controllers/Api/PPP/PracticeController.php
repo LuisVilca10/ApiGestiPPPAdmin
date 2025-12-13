@@ -21,6 +21,7 @@ class PracticeController
         if (!$userId) {
             return response()->json(['message' => 'No autorizado. Se requiere autenticación.'], 401);
         }
+
         $size = $request->input('size', 10);
         $frontendPage = $request->input('page', 0);
         $laravelPage = $frontendPage + 1;
@@ -43,6 +44,39 @@ class PracticeController
         ]);
         // $practices = Practice::all();
         // return response()->json($practices);
+    }
+
+
+    public function DocumentsByPractice(Request $request, $practiceId)
+    {
+        // 1. Obtener parámetros de paginación y búsqueda
+        $size = $request->input('size', 10);
+        $frontendPage = $request->input('page', 0);
+        $laravelPage = $frontendPage + 1;
+        $search = $request->input('search');
+
+        // 2. Iniciar la consulta filtrando por la Práctica
+        // Asumimos que tu tabla 'documents' tiene una columna 'practice_id'
+        $query = Document::where('practice_id', $practiceId);
+
+        // 3. Aplicar búsqueda (si el usuario escribió algo en el buscador)
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%") // Cambia 'name' por el nombre real de tu columna
+                    ->orWhere('description', 'like', "%{$search}%"); // Opcional
+            });
+        }
+
+        // 4. Ejecutar la paginación
+        $data = $query->paginate($size, ['*'], 'page', $laravelPage);
+
+        // 5. Retornar la respuesta con el formato exacto que necesitas
+        return response()->json([
+            'content' => $data->items(),
+            'totalElements' => $data->total(),
+            'currentPage' => $frontendPage,
+            'totalPages' => $data->lastPage(),
+        ]);
     }
 
     public function show($id)
@@ -96,7 +130,7 @@ class PracticeController
 
             $pdf = Pdf::loadView('pdfs.carta_presentacion', $data);
             $fecha_formateada = Carbon::now()->format('dmYHi');
-            $fileName = 'CARTA_PRESENTACION_' . $estudiante->codigo_universitario . '_' . $fecha_formateada . '.pdf';
+            $fileName = 'CARTA_PRESENTACION_' . $estudiante->code . '_' . $fecha_formateada . '.pdf';
             $filePath = 'practicas/' . $fileName;
 
 
