@@ -70,6 +70,11 @@ class PracticeController
         // 4. Ejecutar la paginación
         $data = $query->paginate($size, ['*'], 'page', $laravelPage);
 
+        $data->getCollection()->transform(function ($document) {
+            $document->document_path = env("APP_URL").'storage/' . $document->document_path;
+            return $document;
+        });
+
         // 5. Retornar la respuesta con el formato exacto que necesitas
         return response()->json([
             'content' => $data->items(),
@@ -141,6 +146,7 @@ class PracticeController
                 'practice_id' => $practice->id,
                 'document_type' => 'Carta Presentacion',
                 'document_path' => $filePath,
+                'document_name' => 'Carta Presentacion' . ' - ' . $estudiante->name,
                 'document_status' => 'En Proceso',
             ]);
 

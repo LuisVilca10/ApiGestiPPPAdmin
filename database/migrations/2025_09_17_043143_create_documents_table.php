@@ -21,6 +21,7 @@ return new class extends Migration
                 'Informe de Practicas',
                 'Monitoreo y Evaluacion de Practicas'
             ]);
+            $table->string('document_name');
             $table->string('document_path');
             $table->enum('document_status', [
                 'Aprobado',

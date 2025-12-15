@@ -13,6 +13,7 @@ class Document extends Model
 
     protected $fillable = [
         'document_type',
+        'document_name',
         'document_path',
         'document_status',
         'practice_id'
