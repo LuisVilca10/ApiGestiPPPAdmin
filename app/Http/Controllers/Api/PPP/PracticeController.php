@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 class PracticeController
 {
+    // Método GET: Listar todas las prácticas (FALTA FILTRAR POR USUARIOS) con paginación y búsqueda
     public function index(Request $request)
     {
 
@@ -46,7 +47,7 @@ class PracticeController
         // return response()->json($practices);
     }
 
-
+    //obtener documentos por práctica con paginación y búsqueda
     public function DocumentsByPractice(Request $request, $practiceId)
     {
         // 1. Obtener parámetros de paginación y búsqueda
@@ -71,11 +72,11 @@ class PracticeController
         $data = $query->paginate($size, ['*'], 'page', $laravelPage);
 
         $data->getCollection()->transform(function ($document) {
-            $document->document_path = env("APP_URL").'storage/' . $document->document_path;
+            $document->document_path = env("APP_URL") . 'storage/' . $document->document_path;
             return $document;
         });
 
-        // 5. Retornar la respuesta con el formato exacto que necesitas
+        // 5. Retornar la respuesta con el formato esperado
         return response()->json([
             'content' => $data->items(),
             'totalElements' => $data->total(),
@@ -84,6 +85,29 @@ class PracticeController
         ]);
     }
 
+    // Método GET: Obtener las prácticas con id relacionaods a un usuario
+    public function practicesforselect(Request $request)
+    {
+        $userId = Auth::id();
+
+        if (!$userId) {
+            return response()->json(['message' => 'No autorizado. Se requiere autenticación.'], 401);
+        }
+
+        // 1. Obtenemos TODAS las prácticas del usuario.
+        $practices = Practice::where('user_id', $userId)
+            ->select('id', 'name_empresa') // Solo los campos necesarios.
+            ->orderBy('name_empresa')      // Las mandamos ordenadas.
+            ->get();
+
+        // 2. Mapeamos al formato deseado (opcional pero buena práctica).
+        $data = $practices->map(fn($p) => ['id' => $p->id, 'name_empresa' => $p->name_empresa]);
+
+        // 3. Devolvemos el listado completo.<
+        return response()->json(['data' => $data]);
+    }
+
+    
     public function show($id)
     {
         $practice = Practice::find($id);
