@@ -78,6 +78,7 @@ Route::prefix('practice')->group(function () {
     Route::get('/', [PracticeController::class, 'index']);
     Route::get('/documents/{id}', [PracticeController::class, 'DocumentsByPractice']);
     Route::get('/practicesforselect', [PracticeController::class, 'practicesforselect']);
+    Route::post('/upload-document', [PracticeController::class, 'storeDocumentPractice']);
 });
 
 

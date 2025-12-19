@@ -107,7 +107,7 @@ class PracticeController
         return response()->json(['data' => $data]);
     }
 
-    
+
     public function show($id)
     {
         $practice = Practice::find($id);
@@ -141,7 +141,7 @@ class PracticeController
             $validated['user_id'] = $userId;
 
             $practice = Practice::create($validated);
-
+            
             $estudiante = $practice->user;
 
             if (!$estudiante) {
@@ -192,6 +192,43 @@ class PracticeController
             ], 500);
         }
     }
+    // Método POST: Subir un documento relacionado a una práctica
+    public function storeDocumentPractice(Request $request)
+    {
+        if (!Auth::check()) {
+            return response()->json(['message' => 'No autorizado.'], 401);
+        }
+
+        $request->validate([
+            'practice_id' => 'required|exists:practices,id',
+            'document_type' => 'required|string',
+            'file' => 'required|file|mimes:pdf,doc,docx|max:10240',
+        ]);
+        $username = Auth::user()->code;
+        $file = $request->file('file');
+        $extension = $file->getClientOriginalExtension();
+        $archivoNombre = $request->document_type . ' - ' . $username . ' - ' . now()->format('dmYHi') . '.' . $extension;
+
+        // 2. Usamos storeAs en lugar de store
+        // 'practicas' es la carpeta, $archivoNombre el nombre, 'public' el disco
+        $path = $file->storeAs('practicas', $archivoNombre, 'public');
+
+        $document = Document::create([
+            'practice_id' => $request->practice_id,
+            'document_type' => $request->document_type,
+            'document_name' => $archivoNombre,
+            'document_path' => $path,
+            'document_status' => "En Proceso",
+        ]);
+
+        // Devolvemos el objeto creado con código 201
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Document uploaded successfully',
+            'data' => $document
+        ], 201);
+    }
+
 
     // Método PUT: Actualizar los detalles de una práctica
     public function update(Request $request, $id)

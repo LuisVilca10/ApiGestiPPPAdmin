@@ -17,14 +17,15 @@ class DocumentFactory extends Factory
      */
     public function definition(): array
     {
-        $type = $this->faker->randomElement([
+        $types = [
             'Carta Presentacion',
             'Carta Aceptacion',
             'Plan de Practicas',
             'Evaluacion de Practicas',
             'Informe de Practicas',
             'Monitoreo y Evaluacion de Practicas'
-        ]);
+        ];
+        $type = $this->faker->randomElement($types);
         return [
             'document_type' => $type,
             'document_name' => $type . ' - ' . $this->faker->name(),

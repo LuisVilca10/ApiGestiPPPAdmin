@@ -13,14 +13,7 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->enum('document_type', [
-                'Carta Presentacion',
-                'Carta Aceptacion',
-                'Plan de Practicas',
-                'Evaluacion de Practicas',
-                'Informe de Practicas',
-                'Monitoreo y Evaluacion de Practicas'
-            ]);
+            $table->string('document_type');
             $table->string('document_name');
             $table->string('document_path');
             $table->enum('document_status', [
