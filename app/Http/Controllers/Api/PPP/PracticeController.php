@@ -141,7 +141,7 @@ class PracticeController
             $validated['user_id'] = $userId;
 
             $practice = Practice::create($validated);
-            
+
             $estudiante = $practice->user;
 
             if (!$estudiante) {
@@ -202,7 +202,7 @@ class PracticeController
         $request->validate([
             'practice_id' => 'required|exists:practices,id',
             'document_type' => 'required|string',
-            'file' => 'required|file|mimes:pdf,doc,docx|max:10240',
+            'file' => 'required|file|mimes:pdf,doc,docx,ppt,pptx|max:30720', // Máximo 30MB
         ]);
         $username = Auth::user()->code;
         $file = $request->file('file');
@@ -216,7 +216,7 @@ class PracticeController
         $document = Document::create([
             'practice_id' => $request->practice_id,
             'document_type' => $request->document_type,
-            'document_name' => $archivoNombre,
+            'document_name' => $archivoNombre, // Corregido: sin la 'a' extra
             'document_path' => $path,
             'document_status' => "En Proceso",
         ]);
