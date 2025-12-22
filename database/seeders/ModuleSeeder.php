@@ -16,7 +16,7 @@ class ModuleSeeder extends Seeder
         $modules = [
             // Hijos de Documentos y Trámite (01)
             [
-                'title'            => 'Trámites en Línea',
+                'title'            => 'CP Y Mis Practicas',
                 'code'             => '01',
                 'subtitle'         => 'Gestión de trámites',
                 'type'             => 'basic',
@@ -27,7 +27,7 @@ class ModuleSeeder extends Seeder
                 'parent_module_id' => 1,
             ],
             [
-                'title'            => 'Bitacora de mis tramites',
+                'title'            => 'Bitacora de mis Documentos',
                 'code'             => '02',
                 'subtitle'         => 'Gestión de trámites',
                 'type'             => 'basic',
@@ -37,38 +37,39 @@ class ModuleSeeder extends Seeder
                 'link'             => '/homeScreen/docs/bitacora',
                 'parent_module_id' => 1,
             ],
-            [
-                'title'            => 'Mis Documentos',
-                'code'             => '03',
-                'subtitle'         => 'Gestión de documentos recibidos',
-                'type'             => 'basic',
-                'icon'             => 'heroicons_outline:document-text',
-                'status'           => 1,
-                'moduleOrder'      => 3,
-                'link'             => '/homeScreen/docs/documents',
-                'parent_module_id' => 1, // Relación con ParentModule "01"
-            ],
+
             // Hijos de Seguimiento y Evaluación (02)
             [
-                'title'            => 'Indicadores',
+                'title'            => 'Reportes de desempeño',
                 'code'             => '03',
-                'subtitle'         => 'Módulo de indicadores de desempeño',
+                'subtitle'         => 'Módulo de reportes e indicadores',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:chart-bar',
                 'status'           => 1,
                 'moduleOrder'      => 1,
-                'link'             => '/homeScreen/seguimiento/indicadores',
+                'link'             => '/homeScreen/seguimiento/desempeno',
                 'parent_module_id' => 2,
             ],
             [
                 'title'            => 'Evaluaciones',
                 'code'             => '04',
-                'subtitle'         => 'Evaluaciones y reportes',
+                'subtitle'         => 'Evaluaciones de prácticas',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:clipboard-check',
                 'status'           => 1,
                 'moduleOrder'      => 2,
                 'link'             => '/homeScreen/seguimiento/evaluaciones',
+                'parent_module_id' => 2,
+            ],
+            [
+                'title'            => 'Validación de Documentos',
+                'code'             => '05',
+                'subtitle'         => 'Evaluaciones de prácticas',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:clipboard-check',
+                'status'           => 1,
+                'moduleOrder'      => 2,
+                'link'             => '/homeScreen/seguimiento/validacion-documentos',
                 'parent_module_id' => 2,
             ],
 

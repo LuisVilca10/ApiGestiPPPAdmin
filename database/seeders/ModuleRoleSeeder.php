@@ -16,6 +16,7 @@ class ModuleRoleSeeder extends Seeder
     {
         // Obtén los roles
         $adminRole   = Role::where('name', 'Admin')->first();
+        $coordinadorRole = Role::where('name', 'Coordinador')->first();
         $studentRole = Role::where('name', 'Estudiante')->first();
         //$userRole    = Role::where('name', 'usuario')->first();
 

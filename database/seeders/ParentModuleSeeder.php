@@ -15,9 +15,9 @@ class ParentModuleSeeder extends Seeder
     {
         $parentmodule = [
             [
-                'title'        => 'Documentos y Tramite',
+                'title'        => 'Practicas y Documentos',
                 'code'         => '01',
-                'subtitle'     => 'Gestión de Documentos y Tramites',
+                'subtitle'     => 'Gestión de Practicas y Documentos',
                 'type'         => 'collapsable',
                 'icon'         => 'heroicons_outline:user-group',
                 'status'       => 1,

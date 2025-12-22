@@ -73,7 +73,7 @@ Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(
 
 // **********************************************RUTAS DE TRAMITES ********************************************************************
 
-Route::prefix('practice')->group(function () {
+Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
     Route::post('/', [PracticeController::class, 'store']);
     Route::get('/', [PracticeController::class, 'index']);
     Route::get('/documents/{id}', [PracticeController::class, 'DocumentsByPractice']);
@@ -81,7 +81,10 @@ Route::prefix('practice')->group(function () {
     Route::post('/upload-document', [PracticeController::class, 'storeDocumentPractice']);
 });
 
-
+Route::prefix('documents')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+    Route::get('/', [DocumentController::class, 'indexForStudent']);
+    Route::post('/docsbitacora', [DocumentController::class, 'storeDocumentBitacora']);
+});
 // // Rutas de Logueo y Registro
 // Route::post('/register', [AuthController::class, 'register'])->middleware('auth:api');
 // Route::post('/login', [AuthController::class, 'login']);
