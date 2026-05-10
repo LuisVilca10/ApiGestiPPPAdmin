@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('code')->nullable();
             $table->string('username');
+            $table->string('academic_cycle')->default('I');
+            $table->unsignedInteger('hours_of_practice')->default(0);
             $table->string('email')->unique();
             $table->string('photo_url')->nullable();
             $table->timestamp('email_verified_at')->nullable();

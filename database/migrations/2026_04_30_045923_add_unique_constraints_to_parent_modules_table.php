@@ -1,0 +1,24 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('parent_modules', function (Blueprint $table) {
+            $table->string('title', 100)->unique()->change();
+            $table->string('code')->nullable()->unique()->change();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('parent_modules', function (Blueprint $table) {
+            $table->dropUnique(['title']);
+            $table->dropUnique(['code']);
+        });
+    }
+};

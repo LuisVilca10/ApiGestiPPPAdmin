@@ -135,7 +135,7 @@
     </div>
 
     <div class="carta-num">
-        CARTA N° {{ $numero_carta }}
+        {{ $numero_carta }}
     </div>
 
     <div class="recipient">
@@ -147,11 +147,11 @@
     <p><strong>De mi mayor consideración:</strong></p>
 
     <div class="body-text">
-        <p>Reciba un cordial saludo a nombre de la Escuela Profesional de Ingeniería de Sistemas y los mejores deseos de bendición de lo Alto a usted y familia.</p>
+        <p>Reciba un cordial saludo a nombre de la Escuela Profesional de Administración y los mejores deseos de bendición de lo Alto a usted y familia.</p>
 
-        <p>Es grato presentar al(a) estudiante <strong>{{ $estudiante->name }} {{ $estudiante->last_name }}</strong>, identificado(a) con código universitario N° <strong>{{ $estudiante->code }}</strong>, estudiante del Programa de la Escuela Profesional de <strong>Ingeniería de Sistemas</strong>, quien desea realizar Prácticas Preprofesionales en la empresa <strong>{{ $empresa->name_empresa }}</strong>, bajo la supervisión de <strong>{{ $empresa->trate_represent }} {{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</strong>.</p>
+        <p>Es grato presentar al(a) estudiante <strong>{{ $estudiante->name }} {{ $estudiante->last_name }}</strong>, identificado(a) con código universitario N° <strong>{{ $estudiante->code }}</strong>, estudiante del Programa de la Escuela Profesional de <strong>Administración</strong>, quien desea realizar Prácticas Preprofesionales en la empresa <strong>{{ $empresa->name_empresa }}</strong>, bajo la supervisión de <strong>{{ $empresa->trate_represent }} {{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</strong>.</p>
 
-        <p>El estudiante realizará actividades de <strong>{{ $empresa->activity_student }}</strong> con una duración total de <strong>{{ $empresa->hourse_practice }}</strong> horas. Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela, logrando así los objetivos necesarios en la formación del futuro ingeniero.</p>
+        <p>El estudiante realizará actividades de <strong>{{ $empresa->activity_student }}</strong> con una duración total de <strong>{{ $empresa->hourse_practice }}</strong> horas. Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela, logrando así los objetivos necesarios en la formación del futuro administrador.</p>
 
         <p>Agradeciendo de antemano el apoyo brindado, me despido.</p>
     </div>
@@ -161,8 +161,8 @@
     </div>
 
     <div class="signature">
-        <p class="name">Dr. Danny Levano Rodríguez</p>
-        <p class="title">Coordinador EP Ingeniería de Sistemas</p>
+        <p class="name">Mg. Amed Vargas Martínez</p>
+        <p class="title">Coordinador EP Administración</p>
         <p class="title">UPeU Campus Juliaca</p>
     </div>
 

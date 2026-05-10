@@ -32,11 +32,5 @@ trait ApiResponseTrait
         ], $code);
     }
 
-    public function error($message, $status = 400)
-    {
-        return response()->json([
-            'status' => false,
-            'message' => $message,
-        ], $status);
-    }
+
 }
