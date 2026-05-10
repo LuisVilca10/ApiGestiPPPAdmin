@@ -14,34 +14,59 @@ class ModuleSeeder extends Seeder
     public function run(): void
     {
         $modules = [
+
             // Hijos de Documentos y Trámite (01)
             [
-                'title'            => 'CP Y Mis Practicas',
+                'title'            => 'Inscripcion a Prácticas',
                 'code'             => '01',
-                'subtitle'         => 'Gestión de trámites',
+                'subtitle'         => 'Gestión de inscripciones a prácticas preprofesionales',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:clipboard-document',
                 'status'           => 1,
                 'moduleOrder'      => 1,
-                'link'             => '/homeScreen/docs/practices',
+                'link'             => '/homeScreen/docs/inscripcion-practicas',
                 'parent_module_id' => 1,
             ],
             [
-                'title'            => 'Bitacora de mis Documentos',
+                'title'            => 'Cartas de Presentación',
                 'code'             => '02',
+                'subtitle'         => 'Gestión de cartas de presentación para prácticas',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:clipboard-document',
+                'status'           => 1,
+                'moduleOrder'      => 2,
+                'link'             => '/homeScreen/docs/cartas-presentacion',
+                'parent_module_id' => 1,
+            ],
+            
+            [
+                'title'            => 'Bitacora de mis Documentos',
+                'code'             => '03',
                 'subtitle'         => 'Gestión de trámites',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:clipboard-check',
                 'status'           => 1,
-                'moduleOrder'      => 2,
+                'moduleOrder'      => 3,
                 'link'             => '/homeScreen/docs/bitacora',
+                'parent_module_id' => 1,
+            ],
+
+            [
+                'title'            => 'Grafico de Practicas',
+                'code'             => 'PR01 ',
+                'subtitle'         => 'Gestión de graficos de prácticas',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:clipboard-check',
+                'status'           => 1,
+                'moduleOrder'      => 4,
+                'link'             => '/homeScreen/docs/grafico-practicas',
                 'parent_module_id' => 1,
             ],
 
             // Hijos de Seguimiento y Evaluación (02)
             [
                 'title'            => 'Reportes de desempeño',
-                'code'             => '03',
+                'code'             => '04',
                 'subtitle'         => 'Módulo de reportes e indicadores',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:chart-bar',
@@ -52,7 +77,7 @@ class ModuleSeeder extends Seeder
             ],
             [
                 'title'            => 'Evaluaciones',
-                'code'             => '04',
+                'code'             => '05',
                 'subtitle'         => 'Evaluaciones de prácticas',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:clipboard-check',
@@ -63,8 +88,8 @@ class ModuleSeeder extends Seeder
             ],
             [
                 'title'            => 'Validación de Documentos',
-                'code'             => '05',
-                'subtitle'         => 'Evaluaciones de prácticas',
+                'code'             => '06',
+                'subtitle'         => 'Validación de documentos de prácticas',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:clipboard-check',
                 'status'           => 1,
@@ -75,36 +100,14 @@ class ModuleSeeder extends Seeder
 
             // Hijos de Configuración (03)
             [
-                'title'            => 'Usuarios',
-                'code'             => '05',
-                'subtitle'         => 'Gestión de usuarios del sistema',
-                'type'             => 'basic',
-                'icon'             => 'heroicons_outline:user-group',
-                'status'           => 1,
-                'moduleOrder'      => 1,
-                'link'             => '/homeScreen/setup/users',
-                'parent_module_id' => 3,
-            ],
-            [
                 'title'            => 'Roles',
-                'code'             => '06',
+                'code'             => '07',
                 'subtitle'         => 'Gestión de roles y permisos',
                 'type'             => 'basic',
                 'icon'             => 'heroicons_outline:shield-check',
                 'status'           => 1,
                 'moduleOrder'      => 2,
                 'link'             => '/homeScreen/setup/roles',
-                'parent_module_id' => 3,
-            ],
-            [
-                'title'            => 'Configuración General',
-                'code'             => '07',
-                'subtitle'         => 'Parámetros del sistema',
-                'type'             => 'basic',
-                'icon'             => 'heroicons_outline:cog-6-tooth',
-                'status'           => 1,
-                'moduleOrder'      => 3,
-                'link'             => '/homeScreen/setup/config',
                 'parent_module_id' => 3,
             ],
             [

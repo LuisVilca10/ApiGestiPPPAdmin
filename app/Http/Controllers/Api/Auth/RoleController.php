@@ -2,72 +2,72 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Http\Requests\Role\AssignModulesToRoleRequest;
+use App\Http\Requests\Role\AssignRoleRequest;
+use App\Http\Requests\Role\StoreRoleRequest;
+use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Models\Module;
 use App\Models\Role;
 use App\Models\User;
+use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 
 class RoleController
 {
+    use ApiResponseTrait;
+
     public function index(Request $request)
     {
         $pageSize = $request->get('size', 10);
-        $page = $request->get('page', 0);
-        $name = $request->get('name'); // 🔍 Variable de búsqueda
+        $page     = $request->get('page', 0);
+        $name     = $request->get('name');
 
-        // Construir query con filtro si hay búsqueda
         $query = Role::query();
 
         if (!empty($name)) {
             $query->where('name', 'like', '%' . $name . '%');
         }
 
-        // Paginar
-        $roles = $query->paginate($pageSize, ['*'], 'page', $page + 1); // base 1 para Laravel
+        $roles = $query->paginate($pageSize, ['*'], 'page', $page + 1);
 
-        return response()->json([
-            'content' => $roles->items(),
+        return $this->successResponse([
+            'content'       => $roles->items(),
             'totalElements' => $roles->total(),
-            'currentPage' => $roles->currentPage() - 1,
-            'totalPages' => $roles->lastPage()
+            'currentPage'   => $roles->currentPage() - 1,
+            'totalPages'    => $roles->lastPage(),
         ]);
     }
 
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:roles,name|max:255',
-        ]);
-
-        $role = Role::create(['name' => $validated['name']]);
-
-        return response()->json([
-            'role' => $role,
-            'message' => 'Rol creado exitosamente',
-        ], 201);
-    }
-
-    public function update(Request $request, $id)
+    public function show($id)
     {
         $role = Role::find($id);
 
         if (!$role) {
-            return response()->json([
-                'message' => 'Rol no encontrado',
-            ], 404);
+            return $this->errorResponse('Rol no encontrado', 404);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
-        ]);
+        return $this->successResponse(['role' => $role]);
+    }
 
-        $role->update(['name' => $validated['name']]);
+    public function store(StoreRoleRequest $request)
+    {
+        $role = Role::create(['name' => $request->name]);
 
-        return response()->json([
-            'role' => $role,
-            'message' => 'Rol actualizado exitosamente',
-        ]);
+        return $this->successResponse(['role' => $role], 'Rol creado exitosamente', 201);
+    }
+
+    public function update(UpdateRoleRequest $request, $id)
+    {
+        $role = Role::find($id);
+
+        if (!$role) {
+            return $this->errorResponse('Rol no encontrado', 404);
+        }
+
+        $role->update(['name' => $request->name]);
+
+        return $this->successResponse(['role' => $role], 'Rol actualizado exitosamente');
     }
 
 
@@ -76,78 +76,88 @@ class RoleController
         $role = Role::find($id);
 
         if (!$role) {
-            return response()->json([
-                'message' => 'Rol no encontrado',
-            ], 404);
+            return $this->errorResponse('Rol no encontrado', 404);
         }
 
         $role->delete();
 
-        return response()->json([
-            'message' => 'Rol eliminado exitosamente',
-        ]);
+        return $this->successResponse([], 'Rol eliminado exitosamente');
     }
 
-    public function assignRole(Request $request, $userId)
+    public function assignRole(AssignRoleRequest $request, $userId)
     {
-        $request->validate([
-            'role' => 'required|string|exists:roles,name',
-        ]);
-
         $user = User::find($userId);
 
         if (!$user) {
-            return response()->json([
-                'message' => 'Usuario no encontrado',
-            ], 404);
+            return $this->errorResponse('Usuario no encontrado', 404);
         }
 
-        $role = Role::findByName($request->role);
-        $user->assignRole($role);
+        $role = Role::where('name', $request->role)->first();
 
-        return response()->json([
-            'message' => 'Rol asignado exitosamente',
+        if (!$role) {
+            return $this->errorResponse('Rol no encontrado', 404);
+        }
+
+        $user->assignRole($role->name);
+
+        return $this->successResponse([
             'user' => $user,
             'role' => $role->name,
-        ]);
+        ], 'Rol asignado exitosamente');
     }
 
-    public function assignModulesToRole(Request $request, $roleId)
+    public function removeRole(AssignRoleRequest $request, $userId)
     {
-        // Validación de los módulos enviados (verificar que sean UUIDs válidos)
-        $request->validate([
-            'modules' => 'required|array',
-            'modules.*' => 'uuid|exists:modules,id', // Validar que cada módulo sea un UUID y exista en la tabla 'modules'
-        ]);
+        $user = User::find($userId);
 
-        // Buscar el rol por ID
+        if (!$user) {
+            return $this->errorResponse('Usuario no encontrado', 404);
+        }
+
+        $role = Role::where('name', $request->role)->first();
+
+        if (!$role) {
+            return $this->errorResponse('Rol no encontrado', 404);
+        }
+
+        if (!$user->hasRole($role->name)) {
+            return $this->errorResponse('El usuario no tiene ese rol asignado', 422);
+        }
+
+        $user->removeRole($role->name);
+
+        return $this->successResponse([
+            'user' => $user,
+            'role' => $role->name,
+        ], 'Rol removido exitosamente');
+    }
+
+    public function assignModulesToRole(AssignModulesToRoleRequest $request, $roleId)
+    {
         $role = Role::find($roleId);
 
         if (!$role) {
-
-            return response()->json(['message' => 'Rol no encontrado'], 404);
+            return $this->errorResponse('Rol no encontrado', 404);
         }
 
-
-        // Obtener los módulos por sus IDs UUID
         $modules = Module::whereIn('id', $request->modules)->get();
 
         if ($modules->isEmpty()) {
-
-            return response()->json(['message' => 'Módulos no encontrados'], 422);
+            return $this->errorResponse('Módulos no encontrados', 422);
         }
 
-        // Asignar los módulos al rol
-        foreach ($modules as $module) {
-            // Sincronizar los módulos con el rol (sin eliminar los módulos previamente asignados)
-            $role->modules()->syncWithoutDetaching([$module->id]);
+        $alreadyAssignedIds = $role->modules()->pluck('modules.id')->toArray();
+        $newModuleIds       = $modules->pluck('id')->diff($alreadyAssignedIds)->values();
+
+        if ($newModuleIds->isEmpty()) {
+            return $this->errorResponse('Todos los módulos enviados ya están asignados a este rol.', 422);
         }
 
-        // Devolver la respuesta con los módulos asignados
-        return response()->json([
-            'message' => 'Módulos asignados exitosamente',
-            'role' => $role,
-            'modules' => $modules->pluck('id'),
-        ]);
+        $role->modules()->syncWithoutDetaching($newModuleIds->toArray());
+
+        return $this->successResponse([
+            'role'              => $role,
+            'modules_asignados' => $newModuleIds,
+        ], 'Módulos asignados exitosamente');
     }
 }

@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmailNotification;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes, HasRoles;
@@ -27,6 +30,8 @@ class User extends Authenticatable implements JWTSubject
         'username',
         'email',
         'photo_url',
+        'academic_cycle',
+        'hours_of_practice',
         'password',
     ];
 
@@ -70,24 +75,38 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'last_name' => $this->last_name,
-            'username' => $this->username,
-            'email' => $this->email,
-            'code' => $this->code,
-            'photo_url' => $this->imagen_url,
-            'created_at' => $this->created_at,
-            // Traer todos los roles del usuario
-            'roles' => $this->roles->pluck('name'),  // Devuelve una colección con todos los nombres de los roles
-            // Traer todos los permisos del usuario
-            'permissions' => $this->getPermissionsViaRoles()->pluck('name'),  // Devuelve todos los permisos relacionados con los roles
+            'id'                 => $this->id,
+            'name'               => $this->name,
+            'last_name'          => $this->last_name,
+            'username'           => $this->username,
+            'email'              => $this->email,
+            'code'               => $this->code,
+            'photo_url'          => $this->photo_url,
+            'academic_cycle'     => $this->academic_cycle,
+            'hours_of_practice'  => $this->hours_of_practice,
+            'email_verified'     => $this->hasVerifiedEmail(),
+            'created_at'         => $this->created_at,
+            'roles'              => $this->roles->pluck('name'),
+            'permissions'        => $this->getPermissionsViaRoles()->pluck('name'),
         ];
+    }
+
+    protected function photoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value ? Storage::url($value) : null,
+        );
+    }
+
+    // Usa nuestra notificación personalizada en lugar de la de Laravel
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification());
     }
 
     public function practices()
     {
-        return $this->hasMany(Practice::class); // Un usuario puede tener muchas prácticas
+        return $this->hasMany(Practice::class);
     }
 
     public function visits()

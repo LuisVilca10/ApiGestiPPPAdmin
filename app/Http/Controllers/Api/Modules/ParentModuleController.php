@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api\Modules;
 
+use App\Http\Requests\ParentModule\StoreParentModuleRequest;
+use App\Http\Requests\ParentModule\UpdateParentModuleRequest;
+use App\Http\Resources\Module\ParentModuleResource;
 use App\Models\ParentModule;
-use Carbon\Carbon;
+use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 
 class ParentModuleController
 {
+    use ApiResponseTrait;
     /**
      * GET /parent-module?page=&size=&name=
      */
@@ -25,32 +29,13 @@ class ParentModuleController
 
         $data = $query->paginate($size);
 
-        // Construir la respuesta con el formato solicitado
-        $response = [
-            'totalPages' => $data->lastPage(),
-            'currentPage' => $data->currentPage() - 1, // Restamos 1 para ajustarlo al formato que pides
-            'content' => $data->map(function ($module) {
-                return [
-                    'id' => $module->id,
-                    'title' => $module->title,
-                    'code' => $module->code,
-                    'subtitle' => $module->subtitle,
-                    'type' => $module->type,
-                    'icon' => $module->icon,
-                    'status' => $module->status,
-                    'moduleOrder' => $module->moduleOrder,
-                    'link' => $module->link,
-                    'createdAt' => Carbon::parse($module->created_at)->toISOString(), // Convierte la fecha a Carbon
-                    'updatedAt' => Carbon::parse($module->updated_at)->toISOString(), // Convierte la fecha a Carbon
-                    'deletedAt' => $module->deleted_at ? Carbon::parse($module->deleted_at)->toISOString() : null, // Convierte la fecha a Carbon si existe
-                ];
-            }),
+        return $this->successResponse([
+            'totalPages'    => $data->lastPage(),
+            'currentPage'   => $data->currentPage() - 1,
+            'content'       => ParentModuleResource::collection($data->items()),
             'totalElements' => $data->total(),
-        ];
-
-        return response()->json($response);
+        ]);
     }
-
 
     /**
      * GET /parent-module/list?name=
@@ -64,56 +49,7 @@ class ParentModuleController
             $query->where('title', 'like', "%$name%");
         }
 
-        $parentModules = $query->get();
-
-        $response = $parentModules->map(function ($module) {
-            return [
-                'id' => $module->id,
-                'title' => $module->title,
-                'code' => $module->code,
-                'subtitle' => $module->subtitle,
-                'type' => $module->type,
-                'icon' => $module->icon,
-                'status' => $module->status,  // Aquí ya está convertido a booleano
-                'moduleOrder' => $module->moduleOrder,
-                'link' => $module->link,
-                'createdAt' => $module->createdAt,  // Usando el accesor
-                'updatedAt' => $module->updatedAt,  // Usando el accesor
-                'deletedAt' => $module->deletedAt,  // Usando el accesor
-            ];
-        });
-        return response()->json($response);
-    }
-
-    public function listar(Request $request)
-    {
-        $name = $request->input('name');
-        $query = ParentModule::query();
-
-        if ($name) {
-            $query->where('title', 'like', "%$name%");
-        }
-
-        $parentModules = $query->get();
-
-        $response = $parentModules->map(function ($module) {
-            return [
-                'id' => $module->id,
-                'title' => $module->title,
-                'code' => $module->code,
-                'subtitle' => $module->subtitle,
-                'type' => $module->type,
-                'icon' => $module->icon,
-                'status' => $module->status,  // Aquí ya está convertido a booleano
-                'moduleOrder' => $module->moduleOrder,
-                'link' => $module->link,
-                'createdAt' => $module->createdAt,  // Usando el accesor
-                'updatedAt' => $module->updatedAt,  // Usando el accesor
-                'deletedAt' => $module->deletedAt,  // Usando el accesor
-            ];
-        });
-
-        return response()->json($response);
+        return ParentModuleResource::collection($query->get());
     }
 
     /**
@@ -122,27 +58,18 @@ class ParentModuleController
     public function listDetailModuleList()
     {
         $parents = ParentModule::with('modules')->get();
-        return response()->json($parents);
+
+        return ParentModuleResource::collection($parents);
     }
 
     /**
      * POST /parent-module
      */
-    public function store(Request $request)
+    public function store(StoreParentModuleRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'code' => 'nullable|string',
-            'subtitle' => 'required|string|max:100',
-            'type' => 'required|string|max:100',
-            'icon' => 'nullable|string|max:100',
-            'status' => 'required|boolean',
-            'moduleOrder' => 'required|integer',
-            'link' => 'required|string|max:500',
-        ]);
+        $module = ParentModule::create($request->validated());
 
-        $module = ParentModule::create($validated);
-        return response()->json($module);
+        return new ParentModuleResource($module);
     }
 
     /**
@@ -151,30 +78,19 @@ class ParentModuleController
     public function show($id)
     {
         $module = ParentModule::findOrFail($id);
-        return response()->json($module);
+
+        return new ParentModuleResource($module);
     }
 
     /**
      * PUT /parent-module/{id}
      */
-    public function update(Request $request, $id)
+    public function update(UpdateParentModuleRequest $request, $id)
     {
         $module = ParentModule::findOrFail($id);
+        $module->update($request->validated());
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:100',
-            'code' => 'nullable|string',
-            'subtitle' => 'required|string|max:100',
-            'type' => 'required|string|max:100',
-            'icon' => 'nullable|string|max:100',
-            'status' => 'required|boolean',
-            'moduleOrder' => 'required|integer',
-            'link' => 'required|string|max:500',
-        ]);
-
-        $module->update($validated);
-
-        return response()->json($module);
+        return new ParentModuleResource($module);
     }
 
     /**
@@ -185,9 +101,6 @@ class ParentModuleController
         $module = ParentModule::findOrFail($id);
         $module->delete();
 
-        // Retornar la paginación por defecto como en Java
-        $data = ParentModule::paginate(20);
-
-        return response()->json($data);
+        return $this->successResponse([], 'Módulo padre eliminado correctamente');
     }
 }

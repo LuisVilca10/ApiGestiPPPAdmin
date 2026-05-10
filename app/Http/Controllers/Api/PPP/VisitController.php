@@ -2,83 +2,88 @@
 
 namespace App\Http\Controllers\Api\PPP;
 
+use App\Http\Requests\PPP\StoreVisitRequest;
+use App\Http\Requests\PPP\UpdateVisitRequest;
 use App\Models\Visit;
+use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VisitController
 {
-    // Método GET: Obtener todas las visitas
-    public function index()
+    use ApiResponseTrait;
+
+    public function index(Request $request)
     {
-        $visits = Visit::all();
-        return response()->json($visits);
+        $size         = $request->input('size', 10);
+        $frontendPage = $request->input('page', 0);
+        $practiceId   = $request->input('practice_id');
+        $isAdmin      = Auth::user()->hasRole('Admin');
+
+        $query = Visit::with('practice:id,name_empresa', 'user:id,name,last_name,code');
+
+        if (!$isAdmin) {
+            $query->where('user_id', Auth::id());
+        }
+
+        if ($practiceId) {
+            $query->where('practice_id', $practiceId);
+        }
+
+        $data = $query->paginate($size, ['*'], 'page', $frontendPage + 1);
+
+        return $this->successResponse([
+            'content'       => $data->items(),
+            'totalElements' => $data->total(),
+            'currentPage'   => $frontendPage,
+            'totalPages'    => $data->lastPage(),
+        ]);
     }
 
-    // Método GET: Obtener una visita específica por ID
     public function show($id)
     {
-        $visit = Visit::find($id);
+        $visit = Visit::with('practice:id,name_empresa', 'user:id,name,last_name,code')->find($id);
 
         if (!$visit) {
-            return response()->json(['message' => 'Visit not found'], 404);
+            return $this->errorResponse('Visita no encontrada', 404);
         }
 
-        return response()->json($visit);
+        return $this->successResponse($visit->toArray());
     }
 
-    // Método POST: Crear una nueva visita
-    public function store(Request $request)
+    public function store(StoreVisitRequest $request)
     {
-        $request->validate([
-            'practice_id' => 'required|exists:practices,id',  // Relación con la práctica
-            'visit_date' => 'required|date',
-            'visit_type' => 'required|string',
-            'visit_notes' => 'nullable|string',
-            'visit_result' => 'required|integer',
-        ]);
+        $data            = $request->validated();
+        $data['user_id'] = Auth::id();
 
-        // Crear una nueva visita
-        $visit = Visit::create([
-            'practice_id' => $request->practice_id,
-            'visit_date' => $request->visit_date,
-            'visit_type' => $request->visit_type,
-            'visit_notes' => $request->visit_notes,
-            'visit_result' => $request->visit_result,
-        ]);
+        $visit = Visit::create($data);
 
-        return response()->json(['message' => 'Visit created successfully', 'data' => $visit], 201);
+        return $this->successResponse($visit->toArray(), 'Visita registrada correctamente', 201);
     }
 
-    // Método PUT: Actualizar una visita existente
-    public function update(Request $request, $id)
+    public function update(UpdateVisitRequest $request, $id)
     {
         $visit = Visit::find($id);
 
         if (!$visit) {
-            return response()->json(['message' => 'Visit not found'], 404);
+            return $this->errorResponse('Visita no encontrada', 404);
         }
 
-        $visit->update([
-            'visit_date' => $request->visit_date ?? $visit->visit_date,
-            'visit_type' => $request->visit_type ?? $visit->visit_type,
-            'visit_notes' => $request->visit_notes ?? $visit->visit_notes,
-            'visit_result' => $request->visit_result ?? $visit->visit_result,
-        ]);
+        $visit->update($request->validated());
 
-        return response()->json(['message' => 'Visit updated successfully', 'data' => $visit]);
+        return $this->successResponse($visit->toArray(), 'Visita actualizada correctamente');
     }
 
-    // Método DELETE: Eliminar una visita
     public function destroy($id)
     {
         $visit = Visit::find($id);
 
         if (!$visit) {
-            return response()->json(['message' => 'Visit not found'], 404);
+            return $this->errorResponse('Visita no encontrada', 404);
         }
 
         $visit->delete();
 
-        return response()->json(['message' => 'Visit deleted successfully']);
+        return $this->successResponse([], 'Visita eliminada correctamente');
     }
 }

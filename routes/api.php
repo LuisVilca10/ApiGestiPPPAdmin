@@ -1,15 +1,26 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\Auth\EmailVerificationController;
 use App\Http\Controllers\Api\Auth\RoleController;
+use App\Http\Controllers\Api\Auth\UserController;
 use App\Http\Controllers\Api\Modules\ModuleController;
 use App\Http\Controllers\Api\Modules\ParentModuleController;
 use App\Http\Controllers\Api\PPP\DocumentController;
 use App\Http\Controllers\Api\PPP\PracticeController;
+use App\Http\Controllers\Api\PPP\VisitController;
 use Illuminate\Support\Facades\Route;
 
 // **********************************************RUTAS LIBRES DE AUTH ********************************************************************
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/email/send-code', [EmailVerificationController::class, 'sendCode']);
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+// Verificación de correo desde enlace — pública, protegida por firma del URL
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verifyFromEmail'])
+    ->middleware('signed')
+    ->name('verification.verify');
 
 
 // //ruta protegidas auth
@@ -27,10 +38,13 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/perfil', [AuthController::class, 'perfil']);
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::get('/current-user', [AuthController::class, 'getCurrentUser']);
+    // Verificación de correo
+    Route::get('/email/status', [EmailVerificationController::class, 'status']);
+    Route::post('/email/send-verification', [EmailVerificationController::class, 'send']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::put('/update-profile', [AuthController::class, 'updateProfile']); // Esta es la ruta que falta
-    Route::post('/upload-photo', [AuthController::class, 'uploadPhoto']); // Esta es la ruta que falta
+    Route::put('/update-profile', [AuthController::class, 'updateProfile']);
+    Route::post('/upload-photo', [AuthController::class, 'uploadPhoto']);
 });
 
 
@@ -40,7 +54,6 @@ Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
     Route::prefix('parent-module')->group(function () {
         Route::get('/', [ParentModuleController::class, 'listPaginate']);  // Listar con paginación
         Route::get('/list', [ParentModuleController::class, 'list']);  // Listar sin paginación
-        Route::get('/listar', [ParentModuleController::class, 'listar']);  // Otra lista
         Route::get('/list-detail-module-list', [ParentModuleController::class, 'listDetailModuleList']);  // Detalles de módulos
         Route::post('/', [ParentModuleController::class, 'store']);  // Crear nuevo módulo padre
         Route::get('/{id}', [ParentModuleController::class, 'show']);  // Mostrar módulo padre específico
@@ -50,13 +63,24 @@ Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
 
     // Rutas ModuleController
     Route::prefix('module')->group(function () {
-        Route::get('/', [ModuleController::class, 'index']); // Ruta para paginación
-        Route::get('/menu', [ModuleController::class, 'menu']);  // Obtener menú
-        Route::post('/', [ModuleController::class, 'store']);  // Crear nuevo módulo
-        Route::get('/{id}', [ModuleController::class, 'show']);  // Ver módulo específico
-        Route::put('/{id}', [ModuleController::class, 'update']);  // Actualizar módulo
-        Route::delete('/{id}', [ModuleController::class, 'destroy']);  // Eliminar módulo
+        Route::get('/', [ModuleController::class, 'index']);
+        Route::get('/menu', [ModuleController::class, 'menu']);
+        Route::get('/modules-selected/{roleId}/{parentModuleId}', [ModuleController::class, 'modulesSelected']);
+        Route::post('/', [ModuleController::class, 'store']);
+        Route::get('/{id}', [ModuleController::class, 'show']);
+        Route::put('/{id}', [ModuleController::class, 'update']);
+        Route::delete('/{id}', [ModuleController::class, 'destroy']);
     });
+});
+
+// **********************************************RUTAS DE USUARIOS ********************************************************************
+
+Route::prefix('users')->middleware(['auth:api', 'role:Admin'])->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::get('/{id}', [UserController::class, 'show']);
+    Route::post('/', [UserController::class, 'store']);
+    Route::put('/{id}', [UserController::class, 'update']);
+    Route::delete('/{id}', [UserController::class, 'destroy']);
 });
 
 // **********************************************RUTAS DE ROLES ********************************************************************
@@ -68,22 +92,48 @@ Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(
     Route::middleware('permission:editar_roles')->put('/{id}', [RoleController::class, 'update']);
     Route::middleware('permission:editar_roles')->delete('/{id}', [RoleController::class, 'destroy']);
     Route::middleware('permission:editar_roles')->post('/assign-role/{userId}', [RoleController::class, 'assignRole']);
-    Route::middleware('role:admin')->post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
+    Route::middleware('permission:editar_roles')->post('/remove-role/{userId}', [RoleController::class, 'removeRole']);
+    Route::middleware('permission:editar_roles')->post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
 });
 
 // **********************************************RUTAS DE TRAMITES ********************************************************************
 
 Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
-    Route::post('/', [PracticeController::class, 'store']);
     Route::get('/', [PracticeController::class, 'index']);
-    Route::get('/documents/{id}', [PracticeController::class, 'DocumentsByPractice']);
+    Route::get('/periodos', [PracticeController::class, 'periodos']);
+    Route::get('/tipos-documento', [PracticeController::class, 'tiposDocumento']);
     Route::get('/practicesforselect', [PracticeController::class, 'practicesforselect']);
+    Route::get('/documents/{id}', [PracticeController::class, 'documentsByPractice']);
+    Route::post('/', [PracticeController::class, 'store']);
     Route::post('/upload-document', [PracticeController::class, 'storeDocumentPractice']);
+    Route::get('/{id}', [PracticeController::class, 'show']);
+    // Solo Admin puede aprobar o rechazar
+    Route::middleware('role:Admin')->group(function () {
+        Route::post('/{id}/aprobar', [PracticeController::class, 'approve']);
+        Route::post('/{id}/rechazar', [PracticeController::class, 'reject']);
+    });
 });
 
 Route::prefix('documents')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
     Route::get('/', [DocumentController::class, 'indexForStudent']);
-    Route::post('/docsbitacora', [DocumentController::class, 'storeDocumentBitacora']);
+});
+
+// **********************************************RUTAS DE DASHBOARD ********************************************************************
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth:api', 'role:Admin|Estudiante']);
+
+// **********************************************RUTAS DE VISITAS (BITÁCORA) ********************************************************************
+
+Route::prefix('visits')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+    Route::get('/', [VisitController::class, 'index']);
+    Route::get('/{id}', [VisitController::class, 'show']);
+    // Solo Admin puede registrar, editar y eliminar visitas
+    Route::middleware('role:Admin')->group(function () {
+        Route::post('/', [VisitController::class, 'store']);
+        Route::put('/{id}', [VisitController::class, 'update']);
+        Route::delete('/{id}', [VisitController::class, 'destroy']);
+    });
 });
 // // Rutas de Logueo y Registro
 // Route::post('/register', [AuthController::class, 'register'])->middleware('auth:api');

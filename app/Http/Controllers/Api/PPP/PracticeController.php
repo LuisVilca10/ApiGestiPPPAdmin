@@ -2,259 +2,298 @@
 
 namespace App\Http\Controllers\Api\PPP;
 
+use App\Http\Requests\PPP\StoreDocumentRequest;
+use App\Http\Requests\PPP\StorePracticeRequest;
+use App\Http\Requests\PPP\UpdatePracticeRequest;
+use App\Http\Resources\PPP\DocumentResource;
 use App\Models\Document;
 use App\Models\Practice;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\DocumentService;
+use App\Services\PracticeService;
+use App\Traits\ApiResponseTrait;
+use App\Mail\PracticeApproved;
+use App\Mail\PracticeRejected;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class PracticeController
 {
-    // Método GET: Listar todas las prácticas (FALTA FILTRAR POR USUARIOS) con paginación y búsqueda
+    use ApiResponseTrait;
+
+    public function __construct(
+        private readonly PracticeService $practiceService,
+        private readonly DocumentService $documentService,
+    ) {}
+
     public function index(Request $request)
     {
+        $size         = $request->input('size', 10);
+        $frontendPage = $request->input('page', 0);
+        $search       = $request->input('search');
+        $periodo      = $request->input('periodo');
+        $status       = $request->input('status');
+        $isAdmin      = Auth::user()->hasRole('Admin');
 
-        $userId = Auth::id();
+        $query = Practice::withCount('documents')->with('user:id,name,last_name,code');
 
-        if (!$userId) {
-            return response()->json(['message' => 'No autorizado. Se requiere autenticación.'], 401);
+        if (!$isAdmin) {
+            $query->where('user_id', Auth::id());
         }
 
-        $size = $request->input('size', 10);
-        $frontendPage = $request->input('page', 0);
-        $laravelPage = $frontendPage + 1;
-        $search = $request->input('search');
-
-        $query = Practice::where('user_id', $userId)->withCount('documents');
-
         if ($search) {
-            $query->where('name_empresa', 'like', "%{$search}%")
-                ->orWhere('ruc', 'like', "%{$search}%");
-        }
+            $query->where(function ($q) use ($search, $isAdmin) {
+                $q->where('name_empresa', 'like', "%{$search}%")
+                  ->orWhere('ruc', 'like', "%{$search}%");
 
-        $data = $query->paginate($size, ['*'], 'page', $laravelPage);
-
-        return response()->json([
-            'content' => $data->items(),  // Devuelve solo los elementos de la página actual
-            'totalElements' => $data->total(),
-            'currentPage' => $frontendPage, // Restamos 1 para ajustarlo al formato que pides
-            'totalPages' => $data->lastPage(),
-        ]);
-        // $practices = Practice::all();
-        // return response()->json($practices);
-    }
-
-    //obtener documentos por práctica con paginación y búsqueda
-    public function DocumentsByPractice(Request $request, $practiceId)
-    {
-        // 1. Obtener parámetros de paginación y búsqueda
-        $size = $request->input('size', 10);
-        $frontendPage = $request->input('page', 0);
-        $laravelPage = $frontendPage + 1;
-        $search = $request->input('search');
-
-        // 2. Iniciar la consulta filtrando por la Práctica
-        // Asumimos que tu tabla 'documents' tiene una columna 'practice_id'
-        $query = Document::where('practice_id', $practiceId);
-
-        // 3. Aplicar búsqueda (si el usuario escribió algo en el buscador)
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%") // Cambia 'name' por el nombre real de tu columna
-                    ->orWhere('description', 'like', "%{$search}%"); // Opcional
+                // Admin también puede buscar por datos del estudiante
+                if ($isAdmin) {
+                    $q->orWhereHas('user', function ($u) use ($search) {
+                        $u->where('code', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%")
+                          ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+                }
             });
         }
 
-        // 4. Ejecutar la paginación
-        $data = $query->paginate($size, ['*'], 'page', $laravelPage);
+        if ($periodo) {
+            $rango = Practice::rangoFechasDePeriodo($periodo);
+            if ($rango) {
+                $query->whereBetween('created_at', $rango);
+            }
+        }
 
-        $data->getCollection()->transform(function ($document) {
-            $document->document_path = env("APP_URL") . 'storage/' . $document->document_path;
-            return $document;
+        if ($status && in_array($status, ['Pendiente', 'Aprobado', 'Rechazado'])) {
+            $query->where('status', $status);
+        }
+
+        $data = $query->paginate($size, ['*'], 'page', $frontendPage + 1);
+
+        $items = collect($data->items())->map(function ($practice) {
+            $arr = $practice->toArray();
+            $arr['periodo'] = Practice::calcularPeriodo($practice->created_at);
+            return $arr;
         });
 
-        // 5. Retornar la respuesta con el formato esperado
-        return response()->json([
-            'content' => $data->items(),
+        return $this->successResponse([
+            'content'       => $items,
             'totalElements' => $data->total(),
-            'currentPage' => $frontendPage,
-            'totalPages' => $data->lastPage(),
+            'currentPage'   => $frontendPage,
+            'totalPages'    => $data->lastPage(),
         ]);
     }
 
-    // Método GET: Obtener las prácticas con id relacionaods a un usuario
-    public function practicesforselect(Request $request)
+    public function periodos(Request $request)
     {
-        $userId = Auth::id();
+        $isAdmin = Auth::user()->hasRole('Admin');
 
-        if (!$userId) {
-            return response()->json(['message' => 'No autorizado. Se requiere autenticación.'], 401);
+        // Año más antiguo con prácticas (para este usuario o global si es admin)
+        $query = Practice::selectRaw('MIN(YEAR(created_at)) as min_year');
+
+        if (!$isAdmin) {
+            $query->where('user_id', Auth::id());
         }
 
-        // 1. Obtenemos TODAS las prácticas del usuario.
-        $practices = Practice::where('user_id', $userId)
-            ->select('id', 'name_empresa') // Solo los campos necesarios.
-            ->orderBy('name_empresa')      // Las mandamos ordenadas.
-            ->get();
+        $minYear = $query->value('min_year') ?? Carbon::now()->year;
 
-        // 2. Mapeamos al formato deseado (opcional pero buena práctica).
-        $data = $practices->map(fn($p) => ['id' => $p->id, 'name_empresa' => $p->name_empresa]);
+        $periodos = Practice::generarPeriodosHasta((int)$minYear);
 
-        // 3. Devolvemos el listado completo.<
-        return response()->json(['data' => $data]);
+        return $this->successResponse($periodos);
     }
 
+    public function documentsByPractice(Request $request, $practiceId)
+    {
+        $size         = $request->input('size', 10);
+        $frontendPage = $request->input('page', 0);
+        $search       = $request->input('search');
+
+        $query = Document::where('practice_id', $practiceId);
+
+        if ($search) {
+            $query->where('document_name', 'like', "%{$search}%");
+        }
+
+        $data = $query->paginate($size, ['*'], 'page', $frontendPage + 1);
+
+        return $this->successResponse([
+            'content'       => $data->items(),
+            'totalElements' => $data->total(),
+            'currentPage'   => $frontendPage,
+            'totalPages'    => $data->lastPage(),
+        ]);
+    }
+
+    public function tiposDocumento()
+    {
+        return $this->successResponse(Document::TIPOS_PERMITIDOS);
+    }
+
+    public function practicesforselect(Request $request)
+    {
+        $practices = Practice::where('user_id', Auth::id())
+            ->select('id', 'name_empresa')
+            ->orderBy('name_empresa')
+            ->get();
+
+        return $this->successResponse(
+            $practices->map(fn($p) => ['id' => $p->id, 'name_empresa' => $p->name_empresa])->toArray()
+        );
+    }
 
     public function show($id)
     {
         $practice = Practice::find($id);
 
         if (!$practice) {
-            return response()->json(['message' => 'Practice not found'], 404);
+            return $this->errorResponse('Práctica no encontrada', 404);
         }
 
-        return response()->json($practice);
+        return $this->successResponse($practice->toArray());
     }
 
-    // Método POST: Crear una nueva práctica
-    public function store(Request $request)
+    public function store(StorePracticeRequest $request)
     {
+        $validated             = $request->validated();
+        $validated['user_id']  = Auth::id();
+        $validated['status']   = 'Pendiente';
+
+        $practice = Practice::create($validated);
+
+        return $this->successResponse($practice->toArray(), 'Práctica registrada. Pendiente de aprobación.', 201);
+    }
+
+    public function approve($id)
+    {
+        $practice = Practice::with('user')->find($id);
+
+        if (!$practice) {
+            return $this->errorResponse('Práctica no encontrada', 404);
+        }
+
+        if ($practice->status === 'Aprobado') {
+            return $this->errorResponse('La práctica ya fue aprobada', 422);
+        }
+
+        if (!$practice->user) {
+            return $this->errorResponse('El estudiante asociado no existe', 422);
+        }
+
         try {
-            $validated = $request->validate([
-                'name_empresa' => 'required|string|max:255',
-                'ruc' => 'required|string|size:11|regex:/^[0-9]+$/',
-                'name_represent' => 'required|string|max:255',
-                'lastname_represent' => 'required|string|max:255',
-                'trate_represent' => 'nullable|string|max:50',
-                'phone_represent' => 'required|string|max:20',
-                'activity_student' => 'required|string|max:500',
-                'hourse_practice' => 'required|integer|min:1',
-            ]);
-            $userId = Auth::id();
-            if (!$userId) {
-                return response()->json(['error' => 'Token inválido o usuario no autenticado'], 401);
+            $practice->update(['status' => 'Aprobado', 'rejection_reason' => null]);
+
+            $pdf = $this->practiceService->generateCartaPresentacion($practice);
+
+            if ($practice->user->email) {
+                Mail::to($practice->user->email)
+                    ->send(new PracticeApproved($practice, $pdf['url'], $pdf['path']));
             }
 
-            $validated['user_id'] = $userId;
-
-            $practice = Practice::create($validated);
-
-            $estudiante = $practice->user;
-
-            if (!$estudiante) {
-                throw new \Exception("No se encontró el estudiante (User) para la práctica ID: " . $practice->id);
-            }
-
-            $data = [
-                'estudiante' => $estudiante,
-                'empresa' => $practice,
-                'fecha_emision' => now()->locale('es')->isoFormat('D [de] MMMM'),
-                'destinatario_nombre' => 'Mg. Amed Vargas Martínez',
-                'destinatario_titulo' => 'Director de la EP Administración',
-                'numero_carta' => 'CARTA N° ' . (Practice::count()) . '-2025 /IS-FIA-UPEU-CJ',
-            ];
-
-            $pdf = Pdf::loadView('pdfs.carta_presentacion', $data);
-            $fecha_formateada = Carbon::now()->format('dmYHi');
-            $fileName = 'CARTA_PRESENTACION_' . $estudiante->code . '_' . $fecha_formateada . '.pdf';
-            $filePath = 'practicas/' . $fileName;
-
-
-            Storage::disk('public')->put($filePath, $pdf->output());
-            $publicUrl = Storage::url($filePath);
-
-            Document::create([
-                'practice_id' => $practice->id,
-                'document_type' => 'Carta Presentacion',
-                'document_path' => $filePath,
-                'document_name' => 'Carta Presentacion' . ' - ' . $estudiante->name,
-                'document_status' => 'En Proceso',
-            ]);
-
-            $practiceData = $practice->toArray();
-            $practiceData['pdf_url'] = $publicUrl;
-            unset($practiceData['user']);
-
-            return response()->json($practiceData, 201);
+            return $this->successResponse(
+                array_merge($practice->fresh()->toArray(), ['pdf_url' => $pdf['url']]),
+                'Práctica aprobada y carta de presentación generada.'
+            );
         } catch (\Throwable $th) {
-            Log::error('❌ Error en creación de práctica:', [
-                'error' => $th->getMessage(),
-                'line' => $th->getLine(),
-                'trace' => $th->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'message' => 'Error interno del servidor',
-                'error' => $th->getMessage()
-            ], 500);
+            Log::error('Error al aprobar práctica:', ['error' => $th->getMessage(), 'line' => $th->getLine()]);
+            return $this->errorResponse('Error al generar la carta de presentación', 500);
         }
     }
-    // Método POST: Subir un documento relacionado a una práctica
-    public function storeDocumentPractice(Request $request)
-    {
-        if (!Auth::check()) {
-            return response()->json(['message' => 'No autorizado.'], 401);
-        }
 
-        $request->validate([
-            'practice_id' => 'required|exists:practices,id',
-            'document_type' => 'required|string',
-            'file' => 'required|file|mimes:pdf,doc,docx,ppt,pptx|max:30720', // Máximo 30MB
-        ]);
-        $username = Auth::user()->code;
-        $file = $request->file('file');
-        $extension = $file->getClientOriginalExtension();
-        $archivoNombre = $request->document_type . ' - ' . $username . ' - ' . now()->format('dmYHi') . '.' . $extension;
-
-        // 2. Usamos storeAs en lugar de store
-        // 'practicas' es la carpeta, $archivoNombre el nombre, 'public' el disco
-        $path = $file->storeAs('practicas', $archivoNombre, 'public');
-
-        $document = Document::create([
-            'practice_id' => $request->practice_id,
-            'document_type' => $request->document_type,
-            'document_name' => $archivoNombre, // Corregido: sin la 'a' extra
-            'document_path' => $path,
-            'document_status' => "En Proceso",
-        ]);
-
-        // Devolvemos el objeto creado con código 201
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Document uploaded successfully',
-            'data' => $document
-        ], 201);
-    }
-
-
-    // Método PUT: Actualizar los detalles de una práctica
-    public function update(Request $request, $id)
+    public function reject(Request $request, $id)
     {
         $practice = Practice::find($id);
 
         if (!$practice) {
-            return response()->json(['message' => 'Practice not found'], 404);
+            return $this->errorResponse('Práctica no encontrada', 404);
         }
 
-        $practice->update($request->all());
+        if ($practice->status === 'Aprobado') {
+            return $this->errorResponse('No se puede rechazar una práctica ya aprobada', 422);
+        }
 
-        return response()->json(['message' => 'Practice updated successfully', 'data' => $practice]);
+        $rejectionReason = $request->input('rejection_reason');
+
+        $practice->update([
+            'status'           => 'Rechazado',
+            'rejection_reason' => $rejectionReason,
+        ]);
+
+        $practice->load('user');
+
+        // Notificar al estudiante si tiene correo registrado
+        if ($practice->user?->email) {
+            Mail::to($practice->user->email)
+                ->send(new PracticeRejected($practice, $rejectionReason));
+        }
+
+        return $this->successResponse($practice->toArray(), 'Práctica rechazada.');
     }
 
-    // Método DELETE: Eliminar una práctica
+    public function storeDocumentPractice(StoreDocumentRequest $request)
+    {
+        $user         = Auth::user();
+        $documentType = $request->document_type;
+        $practice     = Practice::with('user')->find($request->practice_id);
+
+        if (!$practice) {
+            return $this->errorResponse('Práctica no encontrada', 404);
+        }
+
+        if ($practice->status !== 'Aprobado') {
+            return $this->errorResponse('Solo se pueden subir documentos a prácticas aprobadas', 422);
+        }
+
+        // Tipos reservados para Admin: docente y evaluaciones externas
+        if (in_array($documentType, Document::TIPOS_ADMIN) && !$user->hasRole('Admin')) {
+            return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
+        }
+
+        // Informe de Prácticas: requiere 1500 horas completadas
+        if ($documentType === 'Informe de Practicas') {
+            $horasCompletadas = $practice->user->hours_of_practice ?? 0;
+            if ($horasCompletadas < 1500) {
+                return $this->errorResponse(
+                    "El informe requiere 1500 horas completadas. El estudiante lleva {$horasCompletadas} horas.",
+                    422
+                );
+            }
+        }
+
+        $document = $this->documentService->upload(
+            $request->practice_id,
+            $documentType,
+            $request->file('file')
+        );
+
+        return (new DocumentResource($document->load('practice')))->response()->setStatusCode(201);
+    }
+
+    public function update(UpdatePracticeRequest $request, $id)
+    {
+        $practice = Practice::find($id);
+
+        if (!$practice) {
+            return $this->errorResponse('Práctica no encontrada', 404);
+        }
+
+        $practice->update($request->validated());
+
+        return $this->successResponse($practice->toArray(), 'Práctica actualizada correctamente');
+    }
+
     public function destroy($id)
     {
         $practice = Practice::find($id);
 
         if (!$practice) {
-            return response()->json(['message' => 'Practice not found'], 404);
+            return $this->errorResponse('Práctica no encontrada', 404);
         }
 
         $practice->delete();
 
-        return response()->json(['message' => 'Practice deleted successfully']);
+        return $this->successResponse([], 'Práctica eliminada correctamente');
     }
 }

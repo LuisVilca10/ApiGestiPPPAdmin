@@ -31,7 +31,7 @@ class ModuleRoleSeeder extends Seeder
         // =========================
         // Estudiante -> Trámites + Seguimiento
         // =========================
-        $modulosParaEstudiante = Module::whereIn('code', ['02', '03', '04'])->get();
+        $modulosParaEstudiante = Module::whereIn('code', ['01', '02', '03','05'])->get();
         foreach ($modulosParaEstudiante as $modulo) {
             $modulo->roles()->syncWithoutDetaching([$studentRole->id]);
         }
