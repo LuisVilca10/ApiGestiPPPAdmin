@@ -7,13 +7,14 @@ use App\Http\Requests\PPP\StorePracticeRequest;
 use App\Http\Requests\PPP\UpdatePracticeRequest;
 use App\Http\Resources\PPP\DocumentResource;
 use App\Models\Document;
+use App\Models\Empresa;
 use App\Models\Practice;
 use App\Services\DocumentService;
 use App\Services\PracticeService;
+use App\Services\SunatService;
 use App\Traits\ApiResponseTrait;
 use App\Mail\PracticeApproved;
 use App\Mail\PracticeRejected;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +28,7 @@ class PracticeController
     public function __construct(
         private readonly PracticeService $practiceService,
         private readonly DocumentService $documentService,
+        private readonly SunatService $sunatService,
     ) {}
 
     public function index(Request $request)
@@ -38,7 +40,7 @@ class PracticeController
         $status       = $request->input('status');
         $isAdmin      = Auth::user()->hasRole('Admin');
 
-        $query = Practice::withCount('documents')->with('user:id,name,last_name,code');
+        $query = Practice::withCount('documents')->with(['user:id,name,last_name,code', 'empresa']);
 
         if (!$isAdmin) {
             $query->where('user_id', Auth::id());
@@ -46,8 +48,10 @@ class PracticeController
 
         if ($search) {
             $query->where(function ($q) use ($search, $isAdmin) {
-                $q->where('name_empresa', 'like', "%{$search}%")
-                  ->orWhere('ruc', 'like', "%{$search}%");
+                $q->whereHas('empresa', function ($e) use ($search) {
+                    $e->where('name_empresa', 'like', "%{$search}%")
+                      ->orWhere('ruc', 'like', "%{$search}%");
+                });
 
                 // Admin también puede buscar por datos del estudiante
                 if ($isAdmin) {
@@ -73,14 +77,8 @@ class PracticeController
 
         $data = $query->paginate($size, ['*'], 'page', $frontendPage + 1);
 
-        $items = collect($data->items())->map(function ($practice) {
-            $arr = $practice->toArray();
-            $arr['periodo'] = Practice::calcularPeriodo($practice->created_at);
-            return $arr;
-        });
-
         return $this->successResponse([
-            'content'       => $items,
+            'content'       => $data->items(),
             'totalElements' => $data->total(),
             'currentPage'   => $frontendPage,
             'totalPages'    => $data->lastPage(),
@@ -135,18 +133,19 @@ class PracticeController
     public function practicesforselect(Request $request)
     {
         $practices = Practice::where('user_id', Auth::id())
-            ->select('id', 'name_empresa')
-            ->orderBy('name_empresa')
+            ->with('empresa:id,name_empresa')
+            ->select('id', 'empresa_id')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return $this->successResponse(
-            $practices->map(fn($p) => ['id' => $p->id, 'name_empresa' => $p->name_empresa])->toArray()
+            $practices->map(fn($p) => ['id' => $p->id, 'name_empresa' => $p->empresa?->name_empresa])->toArray()
         );
     }
 
     public function show($id)
     {
-        $practice = Practice::find($id);
+        $practice = Practice::with('empresa', 'user:id,name,last_name,code')->find($id);
 
         if (!$practice) {
             return $this->errorResponse('Práctica no encontrada', 404);
@@ -157,18 +156,37 @@ class PracticeController
 
     public function store(StorePracticeRequest $request)
     {
-        $validated             = $request->validated();
-        $validated['user_id']  = Auth::id();
-        $validated['status']   = 'Pendiente';
+        $validated = $request->validated();
 
-        $practice = Practice::create($validated);
+        $empresa = Empresa::updateOrCreate(
+            ['ruc' => $validated['ruc']],
+            [
+                'name_empresa'       => $validated['name_empresa'],
+                'name_represent'     => $validated['name_represent'],
+                'lastname_represent' => $validated['lastname_represent'],
+                'trate_represent'    => $validated['trate_represent'] ?? null,
+                'phone_represent'    => $validated['phone_represent'],
+            ]
+        );
 
-        return $this->successResponse($practice->toArray(), 'Práctica registrada. Pendiente de aprobación.', 201);
+        $practice = Practice::create([
+            'empresa_id'       => $empresa->id,
+            'activity_student' => $validated['activity_student'],
+            'hourse_practice'  => $validated['hourse_practice'],
+            'user_id'          => Auth::id(),
+            'status'           => 'Pendiente',
+        ]);
+
+        return $this->successResponse(
+            $practice->load('empresa')->toArray(),
+            'Práctica registrada. Pendiente de aprobación.',
+            201
+        );
     }
 
     public function approve($id)
     {
-        $practice = Practice::with('user')->find($id);
+        $practice = Practice::with('user', 'empresa')->find($id);
 
         if (!$practice) {
             return $this->errorResponse('Práctica no encontrada', 404);
@@ -182,14 +200,31 @@ class PracticeController
             return $this->errorResponse('El estudiante asociado no existe', 422);
         }
 
-        try {
-            $practice->update(['status' => 'Aprobado', 'rejection_reason' => null]);
+        // Verificar RUC en SUNAT antes de aprobar
+        $ruc = $practice->empresa?->ruc;
+        if ($ruc && config('services.sunat.token')) {
+            $verificacion = $this->sunatService->verificarActivo($ruc);
 
+            if (!$verificacion['valido']) {
+                return $this->errorResponse($verificacion['mensaje'], 422);
+            }
+
+            // Actualizar datos de ubicación de la empresa con la info más reciente de SUNAT
+            $practice->empresa->update([
+                'departamento' => $verificacion['data']['departamento'],
+                'provincia'    => $verificacion['data']['provincia'],
+                'distrito'     => $verificacion['data']['distrito'],
+            ]);
+        }
+
+        try {
             $pdf = $this->practiceService->generateCartaPresentacion($practice);
+
+            $practice->update(['status' => 'Aprobado', 'rejection_reason' => null]);
 
             if ($practice->user->email) {
                 Mail::to($practice->user->email)
-                    ->send(new PracticeApproved($practice, $pdf['url'], $pdf['path']));
+                    ->queue(new PracticeApproved($practice, $pdf['url'], $pdf['path']));
             }
 
             return $this->successResponse(
@@ -251,12 +286,11 @@ class PracticeController
             return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
         }
 
-        // Informe de Prácticas: requiere 1500 horas completadas
+        // Informe de Prácticas: la práctica debe tener al menos 1500 horas declaradas
         if ($documentType === 'Informe de Practicas') {
-            $horasCompletadas = $practice->user->hours_of_practice ?? 0;
-            if ($horasCompletadas < 1500) {
+            if ($practice->hourse_practice < 1500) {
                 return $this->errorResponse(
-                    "El informe requiere 1500 horas completadas. El estudiante lleva {$horasCompletadas} horas.",
+                    "El informe requiere una práctica de al menos 1500 horas. Esta práctica tiene {$practice->hourse_practice} horas declaradas.",
                     422
                 );
             }
@@ -273,15 +307,33 @@ class PracticeController
 
     public function update(UpdatePracticeRequest $request, $id)
     {
-        $practice = Practice::find($id);
+        $practice = Practice::with('empresa')->find($id);
 
         if (!$practice) {
             return $this->errorResponse('Práctica no encontrada', 404);
         }
 
-        $practice->update($request->validated());
+        $validated = $request->validated();
 
-        return $this->successResponse($practice->toArray(), 'Práctica actualizada correctamente');
+        // Si viene algún campo de empresa, actualizar o crear empresa
+        $empresaFields = array_intersect_key($validated, array_flip([
+            'ruc', 'name_empresa', 'name_represent', 'lastname_represent', 'trate_represent', 'phone_represent',
+        ]));
+
+        if (!empty($empresaFields)) {
+            $ruc = $empresaFields['ruc'] ?? $practice->empresa->ruc;
+            $empresa = Empresa::updateOrCreate(['ruc' => $ruc], array_filter($empresaFields, fn($v) => $v !== null));
+            $practice->empresa_id = $empresa->id;
+        }
+
+        $practiceFields = array_intersect_key($validated, array_flip(['activity_student', 'hourse_practice']));
+        if (!empty($practiceFields)) {
+            $practice->fill($practiceFields);
+        }
+
+        $practice->save();
+
+        return $this->successResponse($practice->fresh()->load('empresa')->toArray(), 'Práctica actualizada correctamente');
     }
 
     public function destroy($id)

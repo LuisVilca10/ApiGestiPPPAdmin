@@ -15,7 +15,7 @@ class DocumentResource extends JsonResource
             'document_name'   => $this->document_name,
             'document_path'   => $this->document_path,
             'document_status' => $this->document_status,
-            'practice_name'   => $this->whenLoaded('practice', fn() => $this->practice->name_empresa ?? 'Sin práctica'),
+            'practice_name'   => $this->whenLoaded('practice', fn() => $this->practice->empresa?->name_empresa ?? 'Sin práctica'),
             'created_at'      => $this->created_at?->toISOString(),
         ];
     }

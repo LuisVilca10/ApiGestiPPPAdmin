@@ -22,7 +22,8 @@ class PracticeService
 
         $data = [
             'estudiante'          => $estudiante,
-            'empresa'             => $practice,
+            'empresa'             => $practice->empresa,
+            'practica'            => $practice,
             'fecha_emision'       => now()->locale('es')->isoFormat('D [de] MMMM'),
             'destinatario_nombre' => 'Mg. Amed Vargas Martínez',
             'destinatario_titulo' => 'Director de la EP Administración',
@@ -41,11 +42,11 @@ class PracticeService
             'document_type'   => 'Carta Presentacion',
             'document_path'   => $filePath,
             'document_name'   => 'Carta Presentacion - ' . $estudiante->name,
-            'document_status' => 'En Proceso',
+            'document_status' => 'Aprobado',
         ]);
 
         return [
-            'url'  => Storage::url($filePath),
+            'url'  => url(Storage::url($filePath)),
             'path' => Storage::disk('public')->path($filePath),
         ];
     }

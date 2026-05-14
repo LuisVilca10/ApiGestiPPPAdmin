@@ -24,6 +24,8 @@ return new class extends Migration
 
 
             $table->unique(['module_id', 'role_id']);
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

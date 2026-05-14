@@ -20,7 +20,7 @@ class VisitController
         $practiceId   = $request->input('practice_id');
         $isAdmin      = Auth::user()->hasRole('Admin');
 
-        $query = Visit::with('practice:id,name_empresa', 'user:id,name,last_name,code');
+        $query = Visit::with(['practice:id,empresa_id', 'practice.empresa:id,name_empresa', 'user:id,name,last_name,code']);
 
         if (!$isAdmin) {
             $query->where('user_id', Auth::id());
@@ -42,7 +42,7 @@ class VisitController
 
     public function show($id)
     {
-        $visit = Visit::with('practice:id,name_empresa', 'user:id,name,last_name,code')->find($id);
+        $visit = Visit::with(['practice:id,empresa_id', 'practice.empresa:id,name_empresa', 'user:id,name,last_name,code'])->find($id);
 
         if (!$visit) {
             return $this->errorResponse('Visita no encontrada', 404);

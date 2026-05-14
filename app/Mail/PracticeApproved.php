@@ -4,13 +4,14 @@ namespace App\Mail;
 
 use App\Models\Practice;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PracticeApproved extends Mailable
+class PracticeApproved extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -23,7 +24,7 @@ class PracticeApproved extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '✅ Tu práctica fue aprobada — ' . $this->practice->name_empresa,
+            subject: '✅ Tu práctica fue aprobada — ' . ($this->practice->empresa?->name_empresa ?? ''),
         );
     }
 
@@ -42,7 +43,7 @@ class PracticeApproved extends Mailable
 
         return [
             Attachment::fromPath($this->pdfPath)
-                ->as('Carta_Presentacion_' . $this->practice->name_empresa . '.pdf')
+                ->as('Carta_Presentacion_' . ($this->practice->empresa?->name_empresa ?? 'empresa') . '.pdf')
                 ->withMime('application/pdf'),
         ];
     }

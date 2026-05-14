@@ -2,36 +2,22 @@
 
 namespace Database\Factories;
 
+use App\Models\Document;
 use App\Models\Practice;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Document>
- */
 class DocumentFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
-        $types = [
-            'Carta Presentacion',
-            'Carta Aceptacion',
-            'Plan de Practicas',
-            'Evaluacion de Practicas',
-            'Informe de Practicas',
-            'Monitoreo y Evaluacion de Practicas'
-        ];
-        $type = $this->faker->randomElement($types);
+        $type = $this->faker->randomElement(Document::TIPOS_PERMITIDOS);
+
         return [
-            'document_type' => $type,
-            'document_name' => $type . ' - ' . $this->faker->name(),
-            'document_path' => $this->faker->filePath(),
-            'document_status' => $this->faker->randomElement(['Aprobado', 'En Proceso', 'Denegado']),
-            'practice_id' => $this->faker->randomElement([1, 5]),
+            'document_type'   => $type,
+            'document_name'   => $type . ' - ' . $this->faker->name(),
+            'document_path'   => 'practicas/fake_' . $this->faker->uuid() . '.pdf',
+            'document_status' => $this->faker->randomElement(['En Proceso', 'Aprobado', 'Rechazado']),
+            'practice_id'     => Practice::inRandomOrder()->value('id') ?? 1,
         ];
     }
 }

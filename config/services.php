@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'sunat' => [
+        'token' => env('SUNAT_API_TOKEN'),
+    ],
+
 ];

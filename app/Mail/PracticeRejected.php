@@ -21,7 +21,7 @@ class PracticeRejected extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '❌ Tu práctica requiere correcciones — ' . $this->practice->name_empresa,
+            subject: '❌ Tu práctica requiere correcciones — ' . ($this->practice->empresa?->name_empresa ?? ''),
         );
     }
 

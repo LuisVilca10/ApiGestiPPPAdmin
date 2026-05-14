@@ -151,7 +151,7 @@
 
         <p>Es grato presentar al(a) estudiante <strong>{{ $estudiante->name }} {{ $estudiante->last_name }}</strong>, identificado(a) con código universitario N° <strong>{{ $estudiante->code }}</strong>, estudiante del Programa de la Escuela Profesional de <strong>Administración</strong>, quien desea realizar Prácticas Preprofesionales en la empresa <strong>{{ $empresa->name_empresa }}</strong>, bajo la supervisión de <strong>{{ $empresa->trate_represent }} {{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</strong>.</p>
 
-        <p>El estudiante realizará actividades de <strong>{{ $empresa->activity_student }}</strong> con una duración total de <strong>{{ $empresa->hourse_practice }}</strong> horas. Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela, logrando así los objetivos necesarios en la formación del futuro administrador.</p>
+        <p>El estudiante realizará actividades de <strong>{{ $practica->activity_student }}</strong> con una duración total de <strong>{{ $practica->hourse_practice }}</strong> horas. Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela, logrando así los objetivos necesarios en la formación del futuro administrador.</p>
 
         <p>Agradeciendo de antemano el apoyo brindado, me despido.</p>
     </div>

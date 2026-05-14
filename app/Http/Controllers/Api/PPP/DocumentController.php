@@ -6,6 +6,7 @@ use App\Http\Requests\PPP\StoreDocumentRequest;
 use App\Http\Requests\PPP\UpdateDocumentRequest;
 use App\Http\Resources\PPP\DocumentResource;
 use App\Models\Document;
+use App\Models\Practice;
 use App\Services\DocumentService;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class DocumentController
         $userId       = Auth::id();
         $search       = $request->input('search');
 
-        $query = Document::with(['practice' => fn($q) => $q->select('id', 'name_empresa')])
+        $query = Document::with(['practice' => fn($q) => $q->select('id', 'empresa_id')->with('empresa:id,name_empresa')])
             ->whereHas('practice', fn($q) => $q->where('user_id', $userId));
 
         if ($search) {
@@ -79,6 +80,44 @@ class DocumentController
         return new DocumentResource($document);
     }
 
+    public function aprobar($id)
+    {
+        $document = Document::with('practice.user')->find($id);
+
+        if (!$document) {
+            return $this->errorResponse('Documento no encontrado', 404);
+        }
+
+        if ($document->document_status === 'Aprobado') {
+            return $this->errorResponse('El documento ya está aprobado', 422);
+        }
+
+        $document->update(['document_status' => 'Aprobado']);
+
+        $this->asignarHorasSiCompleto($document->practice);
+
+        return $this->successResponse(
+            (new DocumentResource($document->fresh()->load('practice')))->resolve(),
+            'Documento aprobado correctamente'
+        );
+    }
+
+    public function rechazar(Request $request, $id)
+    {
+        $document = Document::with('practice')->find($id);
+
+        if (!$document) {
+            return $this->errorResponse('Documento no encontrado', 404);
+        }
+
+        $document->update(['document_status' => 'Rechazado']);
+
+        return $this->successResponse(
+            (new DocumentResource($document->fresh()->load('practice')))->resolve(),
+            'Documento rechazado'
+        );
+    }
+
     public function destroy($id)
     {
         $document = Document::find($id);
@@ -90,5 +129,24 @@ class DocumentController
         $document->delete();
 
         return $this->successResponse([], 'Documento eliminado correctamente');
+    }
+
+    private function asignarHorasSiCompleto(Practice $practice): void
+    {
+        $tieneSustentacion = $practice->documents()
+            ->where('document_type', 'Sustentacion de Practicas')
+            ->exists();
+
+        if (!$tieneSustentacion) {
+            return;
+        }
+
+        $todosAprobados = !$practice->documents()
+            ->where('document_status', '!=', 'Aprobado')
+            ->exists();
+
+        if ($todosAprobados) {
+            $practice->user->increment('hours_of_practice', $practice->hourse_practice);
+        }
     }
 }

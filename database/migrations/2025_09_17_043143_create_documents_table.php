@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('document_name');
             $table->string('document_path');
             $table->enum('document_status', [
-                'Aprobado',
                 'En Proceso',
-                'Denegado'
+                'Aprobado',
+                'Rechazado'
             ]);
             $table->unsignedBigInteger('practice_id');
             $table->foreign('practice_id')->references('id')->on('practices')->onDelete('cascade');

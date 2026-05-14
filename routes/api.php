@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\Auth\UserController;
 use App\Http\Controllers\Api\Modules\ModuleController;
 use App\Http\Controllers\Api\Modules\ParentModuleController;
 use App\Http\Controllers\Api\PPP\DocumentController;
+use App\Http\Controllers\Api\PPP\EmpresaController;
 use App\Http\Controllers\Api\PPP\PracticeController;
+use App\Http\Controllers\Api\PPP\RucController;
 use App\Http\Controllers\Api\PPP\VisitController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +39,7 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
 // **********************************************RUTAS DE USUARIOS ********************************************************************
 
 Route::middleware('auth:api')->group(function () {
+    Route::post('/auth/refresh', [AuthController::class, 'refresh']);
     Route::get('/perfil', [AuthController::class, 'perfil']);
     Route::get('/current-user', [AuthController::class, 'getCurrentUser']);
     // Verificación de correo
@@ -45,6 +48,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::put('/update-profile', [AuthController::class, 'updateProfile']);
     Route::post('/upload-photo', [AuthController::class, 'uploadPhoto']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 });
 
 
@@ -96,6 +100,23 @@ Route::prefix('role')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(
     Route::middleware('permission:editar_roles')->post('/assign-modules/{roleId}', [RoleController::class, 'assignModulesToRole']);
 });
 
+// **********************************************RUTAS DE EMPRESAS ********************************************************************
+
+Route::prefix('empresa')->group(function () {
+    // Admin + Estudiante: ver detalle y lista para selects
+    Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+        Route::get('/list', [EmpresaController::class, 'list']);
+        Route::get('/{id}', [EmpresaController::class, 'show']);
+    });
+    // Solo Admin: listado paginado + CRUD completo
+    Route::middleware(['auth:api', 'role:Admin'])->group(function () {
+        Route::get('/', [EmpresaController::class, 'index']);
+        Route::post('/', [EmpresaController::class, 'store']);
+        Route::put('/{id}', [EmpresaController::class, 'update']);
+        Route::delete('/{id}', [EmpresaController::class, 'destroy']);
+    });
+});
+
 // **********************************************RUTAS DE TRAMITES ********************************************************************
 
 Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
@@ -116,11 +137,20 @@ Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante'])->gr
 
 Route::prefix('documents')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
     Route::get('/', [DocumentController::class, 'indexForStudent']);
+    Route::middleware('role:Admin')->group(function () {
+        Route::post('/{id}/aprobar', [DocumentController::class, 'aprobar']);
+        Route::post('/{id}/rechazar', [DocumentController::class, 'rechazar']);
+    });
 });
 
 // **********************************************RUTAS DE DASHBOARD ********************************************************************
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth:api', 'role:Admin|Estudiante']);
+
+// **********************************************RUTA LOOKUP DE RUC ********************************************************************
+
+Route::get('/ruc/{ruc}', [RucController::class, 'lookup'])
     ->middleware(['auth:api', 'role:Admin|Estudiante']);
 
 // **********************************************RUTAS DE VISITAS (BITÁCORA) ********************************************************************

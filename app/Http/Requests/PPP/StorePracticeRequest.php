@@ -9,14 +9,22 @@ class StorePracticeRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
+            'ruc'                 => ['required', 'string', 'size:11', 'regex:/^(10|20)[0-9]{9}$/'],
             'name_empresa'        => 'required|string|max:255',
-            'ruc'                 => 'required|string|size:11|regex:/^[0-9]+$/',
             'name_represent'      => 'required|string|max:255',
             'lastname_represent'  => 'required|string|max:255',
             'trate_represent'     => 'nullable|string|max:50',
             'phone_represent'     => 'required|string|max:20',
             'activity_student'    => 'required|string|max:500',
             'hourse_practice'     => 'required|integer|min:1',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'ruc.regex' => 'El RUC debe tener 11 dígitos y comenzar con 10 (persona natural) o 20 (persona jurídica).',
+            'ruc.size'  => 'El RUC debe tener exactamente 11 dígitos.',
         ];
     }
 }

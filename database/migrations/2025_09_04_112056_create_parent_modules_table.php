@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('parent_modules', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 100);
-            $table->string('code')->nullable();
-            $table->string('subtitle', 100);
+            $table->string('title', 100)->unique();
+            $table->string('code')->nullable()->unique();
+            $table->string('subtitle', 100)->unique();
             $table->string('type', 100);
             $table->string('icon', 100)->nullable();
             $table->boolean('status');

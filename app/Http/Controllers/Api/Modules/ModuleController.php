@@ -61,14 +61,19 @@ class ModuleController
         try {
             $userRoleIds = $user->roles->pluck('id')->toArray();
 
-            $modules = ParentModule::whereHas('modules.roles', function ($query) use ($userRoleIds) {
-                $query->whereIn('roles.id', $userRoleIds);
-            })
+            $modules = ParentModule::where('status', 1)
+                ->whereHas('modules.roles', function ($query) use ($userRoleIds) {
+                    $query->whereIn('roles.id', $userRoleIds);
+                })
                 ->with(['modules' => function ($query) use ($userRoleIds) {
-                    $query->whereHas('roles', function ($q) use ($userRoleIds) {
-                        $q->whereIn('roles.id', $userRoleIds);
-                    });
-                }])->get();
+                    $query->where('status', 1)
+                        ->whereHas('roles', function ($q) use ($userRoleIds) {
+                            $q->whereIn('roles.id', $userRoleIds);
+                        })
+                        ->orderBy('moduleOrder');
+                }])
+                ->orderBy('moduleOrder')
+                ->get();
         } catch (\Exception $e) {
             return $this->errorResponse('Error al obtener módulos', 500);
         }

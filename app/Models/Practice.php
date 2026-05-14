@@ -14,18 +14,15 @@ class Practice extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name_empresa',
-        'ruc',
-        'name_represent',
-        'lastname_represent',
-        'trate_represent',
-        'phone_represent',
+        'empresa_id',
         'activity_student',
         'hourse_practice',
         'status',
         'rejection_reason',
         'user_id',
     ];
+
+    protected $appends = ['periodo'];
     /*
      * Cobertura completa del año (ningún mes queda sin periodo):
      *
@@ -139,6 +136,11 @@ class Practice extends Model
             ],
             default  => null,
         };
+    }
+
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
     }
 
     public function user()

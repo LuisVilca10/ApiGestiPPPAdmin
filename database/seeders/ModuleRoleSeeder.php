@@ -4,44 +4,28 @@ namespace Database\Seeders;
 
 use App\Models\Module;
 use App\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ModuleRoleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Obtén los roles
         $adminRole   = Role::where('name', 'Admin')->first();
-        $coordinadorRole = Role::where('name', 'Coordinador')->first();
         $studentRole = Role::where('name', 'Estudiante')->first();
-        //$userRole    = Role::where('name', 'usuario')->first();
 
-        // =========================
-        // Admin -> TODOS LOS MÓDULOS
-        // =========================
-        $modulosParaAdmin = Module::all();
-        foreach ($modulosParaAdmin as $modulo) {
-            $modulo->roles()->syncWithoutDetaching([$adminRole->id]);
+        if (!$adminRole || !$studentRole) {
+            $this->command->error('Roles Admin o Estudiante no encontrados. Ejecuta primero RoleAndPermissionsSeeder.');
+            return;
         }
 
-        // =========================
-        // Estudiante -> Trámites + Seguimiento
-        // =========================
-        $modulosParaEstudiante = Module::whereIn('code', ['01', '02', '03','05'])->get();
-        foreach ($modulosParaEstudiante as $modulo) {
-            $modulo->roles()->syncWithoutDetaching([$studentRole->id]);
-        }
+        // Admin → todos los módulos
+        Module::all()->each(fn($m) => $m->roles()->syncWithoutDetaching([$adminRole->id]));
 
-        // =========================
-        // Usuario -> Solo Bandeja de Documentos
-        // =========================
-        //$modulosParaUsuario = Module::whereIn('code', ['01'])->get();
-        //foreach ($modulosParaUsuario as $modulo) {
-        //    $modulo->roles()->syncWithoutDetaching([$userRole->id]);
-        //}
+        // Estudiante → módulos de Prácticas y Seguimiento personal
+        $codigosEstudiante = ['PR01', '01', '02', '03', 'AC01', '05'];
+
+        Module::whereIn('code', $codigosEstudiante)
+            ->get()
+            ->each(fn($m) => $m->roles()->syncWithoutDetaching([$studentRole->id]));
     }
 }

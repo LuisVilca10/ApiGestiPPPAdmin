@@ -27,17 +27,18 @@ class AuthController
     private function userArray(User $user): array
     {
         return [
-            'id'                 => $user->id,
-            'name'               => $user->name,
-            'last_name'          => $user->last_name,
-            'code'               => $user->code,
-            'username'           => $user->username,
-            'email'              => $user->email,
-            'photo_url'          => $user->photo_url,
-            'academic_cycle'     => $user->academic_cycle,
-            'hours_of_practice'  => $user->hours_of_practice,
-            'email_verified'     => $user->hasVerifiedEmail(),
-            'email_verified_at'  => $user->email_verified_at?->toISOString(),
+            'id'                   => $user->id,
+            'name'                 => $user->name,
+            'last_name'            => $user->last_name,
+            'code'                 => $user->code,
+            'username'             => $user->username,
+            'email'                => $user->email,
+            'photo_url'            => $user->photo_url,
+            'academic_cycle'       => $user->academic_cycle,
+            'hours_of_practice'    => $user->hours_of_practice,
+            'must_change_password' => (bool) $user->must_change_password,
+            'email_verified'       => $user->hasVerifiedEmail(),
+            'email_verified_at'    => $user->email_verified_at?->toISOString(),
         ];
     }
 
@@ -201,6 +202,50 @@ class AuthController
             Log::error('Error al actualizar perfil: ' . $e->getMessage());
 
             return $this->errorResponse('Error al actualizar el perfil. Intenta de nuevo más tarde.', 500);
+        }
+    }
+
+    public function changePassword(Request $request)
+    {
+        $user = JWTAuth::parseToken()->authenticate();
+
+        if (!$user) {
+            return $this->errorResponse('Usuario no autenticado', 401);
+        }
+
+        $request->validate([
+            'new_password' => 'required|string|min:8',
+        ]);
+
+        $user->update([
+            'password'             => bcrypt($request->new_password),
+            'must_change_password' => false,
+        ]);
+
+        $token = JWTAuth::fromUser($user);
+
+        return $this->successResponse([
+            'token'      => $token,
+            'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
+            'user'       => $this->userArray($user),
+        ], 'Contraseña actualizada correctamente');
+    }
+
+    public function refresh()
+    {
+        try {
+            $newToken = JWTAuth::parseToken()->refresh();
+
+            return $this->successResponse([
+                'token'      => $newToken,
+                'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
+            ], 'Token renovado correctamente');
+        } catch (TokenExpiredException $e) {
+            return $this->errorResponse('Token expirado, inicia sesión de nuevo', 401);
+        } catch (TokenInvalidException $e) {
+            return $this->errorResponse('Token inválido', 401);
+        } catch (\Exception $e) {
+            return $this->errorResponse('No se pudo renovar el token', 401);
         }
     }
 

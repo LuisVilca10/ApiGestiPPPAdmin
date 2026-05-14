@@ -1,5 +1,5 @@
 <x-mail::message>
-# ✅ Tu práctica fue aprobada
+# Tu práctica fue aprobada
 
 Hola **{{ $practice->user->name }} {{ $practice->user->last_name }}**,
 

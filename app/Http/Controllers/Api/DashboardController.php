@@ -66,8 +66,9 @@ class DashboardController
 
         // ── 5. Top 5 empresas con más prácticas ───────────────────────────────
         $topEmpresas = $q()
-            ->selectRaw('name_empresa, COUNT(*) as total')
-            ->groupBy('name_empresa')
+            ->join('empresas', 'practices.empresa_id', '=', 'empresas.id')
+            ->selectRaw('empresas.name_empresa, COUNT(*) as total')
+            ->groupBy('empresas.name_empresa')
             ->orderByDesc('total')
             ->limit(5)
             ->get();
@@ -81,18 +82,18 @@ class DashboardController
 
         // ── 7. Últimas 5 prácticas registradas ───────────────────────────────
         $ultimasPracticas = $q()
-            ->with('user:id,name,last_name,code')
+            ->with(['user:id,name,last_name,code', 'empresa:id,name_empresa'])
             ->latest()
             ->limit(5)
-            ->get(['id', 'name_empresa', 'status', 'user_id', 'created_at'])
+            ->get(['id', 'empresa_id', 'status', 'user_id', 'created_at'])
             ->map(function ($p) {
                 return [
-                    'id'          => $p->id,
-                    'name_empresa'=> $p->name_empresa,
-                    'status'      => $p->status,
-                    'periodo'     => Practice::calcularPeriodo($p->created_at),
-                    'created_at'  => $p->created_at?->toISOString(),
-                    'estudiante'  => $p->user ? [
+                    'id'           => $p->id,
+                    'name_empresa' => $p->empresa?->name_empresa,
+                    'status'       => $p->status,
+                    'periodo'      => Practice::calcularPeriodo($p->created_at),
+                    'created_at'   => $p->created_at?->toISOString(),
+                    'estudiante'   => $p->user ? [
                         'id'        => $p->user->id,
                         'name'      => $p->user->name,
                         'last_name' => $p->user->last_name,

@@ -33,6 +33,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'academic_cycle',
         'hours_of_practice',
         'password',
+        'must_change_password',
     ];
 
     /**

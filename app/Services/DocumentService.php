@@ -19,12 +19,14 @@ class DocumentService
 
         $path = $file->storeAs('practicas', $archivoNombre, 'public');
 
+        $status = in_array($documentType, Document::TIPOS_ADMIN) ? 'Aprobado' : 'En Proceso';
+
         return Document::create([
             'practice_id'     => $practiceId,
             'document_type'   => $documentType,
             'document_name'   => $archivoNombre,
             'document_path'   => $path,
-            'document_status' => 'En Proceso',
+            'document_status' => $status,
         ]);
     }
 }

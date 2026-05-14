@@ -13,14 +13,12 @@ return new class extends Migration
     {
         Schema::create('practices', function (Blueprint $table) {
             $table->id();
-            $table->string('name_empresa');
-            $table->string('ruc');
-            $table->string('name_represent');
-            $table->string('lastname_represent');
-            $table->string('trate_represent');
-            $table->string('phone_represent');
+            $table->unsignedBigInteger('empresa_id');
+            $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->string('activity_student');
             $table->integer('hourse_practice');
+            $table->enum('status', ['Pendiente', 'Aprobado', 'Rechazado'])->default('Pendiente');
+            $table->text('rejection_reason')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
