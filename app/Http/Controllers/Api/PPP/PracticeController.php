@@ -130,6 +130,19 @@ class PracticeController
         return $this->successResponse(Document::TIPOS_PERMITIDOS);
     }
 
+    public function downloadPlanTemplate()
+    {
+        $path = public_path('templates/plan_practicas_template.pdf');
+
+        if (!file_exists($path)) {
+            return $this->errorResponse('Plantilla no disponible.', 404);
+        }
+
+        return response()->download($path, 'Plan_Practicas_Preprofesionales_UPeU.pdf', [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
     public function practicesforselect(Request $request)
     {
         $practices = Practice::where('user_id', Auth::id())

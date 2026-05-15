@@ -10,12 +10,6 @@ use Illuminate\Support\Facades\Storage;
 
 class PracticeService
 {
-    /**
-     * Genera la Carta de Presentación en PDF, la guarda en Storage
-     * y crea el Document asociado a la práctica.
-     *
-     * @return string URL pública del PDF generado
-     */
     public function generateCartaPresentacion(Practice $practice): array
     {
         $estudiante = $practice->user;

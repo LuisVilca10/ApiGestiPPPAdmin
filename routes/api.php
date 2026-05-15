@@ -124,6 +124,7 @@ Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante'])->gr
     Route::get('/periodos', [PracticeController::class, 'periodos']);
     Route::get('/tipos-documento', [PracticeController::class, 'tiposDocumento']);
     Route::get('/practicesforselect', [PracticeController::class, 'practicesforselect']);
+    Route::get('/template/plan-practicas', [PracticeController::class, 'downloadPlanTemplate']);
     Route::get('/documents/{id}', [PracticeController::class, 'documentsByPractice']);
     Route::post('/', [PracticeController::class, 'store']);
     Route::post('/upload-document', [PracticeController::class, 'storeDocumentPractice']);
