@@ -19,7 +19,7 @@ class RucController
             return $this->errorResponse('RUC inválido. Debe tener 11 dígitos y comenzar con 10 o 20.', 422);
         }
 
-        // Buscar en tabla empresas primero
+        // 1. Buscar en tabla empresas primero (incluye soft-deleted para informar)
         $empresa = Empresa::where('ruc', $ruc)->first();
         if ($empresa) {
             return $this->successResponse(
@@ -28,16 +28,22 @@ class RucController
             );
         }
 
-        // Consultar SUNAT
+        // 2. Consultar SUNAT
         $token = config('services.sunat.token');
         if (!$token) {
-            return $this->errorResponse('No hay token SUNAT configurado y el RUC no existe en registros internos.', 404);
+            return $this->errorResponse(
+                'El RUC no existe en los registros internos y no hay token SUNAT configurado.',
+                404
+            );
         }
 
         $data = $this->sunatService->buscarRuc($ruc);
 
         if (!$data) {
-            return $this->errorResponse('RUC no encontrado en SUNAT.', 404);
+            return $this->errorResponse(
+                "El RUC {$ruc} no fue encontrado ni en registros internos ni en SUNAT. Verifique que el número sea correcto.",
+                404
+            );
         }
 
         return $this->successResponse([

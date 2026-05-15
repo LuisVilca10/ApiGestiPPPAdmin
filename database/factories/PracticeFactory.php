@@ -11,7 +11,7 @@ class PracticeFactory extends Factory
     public function definition(): array
     {
         $empresa = Empresa::create([
-            'ruc'                => $this->faker->numerify('2#########'),
+            'ruc'                => $this->faker->randomElement(['10', '20']) . $this->faker->numerify('#########'),
             'name_empresa'       => $this->faker->company,
             'name_represent'     => $this->faker->firstName,
             'lastname_represent' => $this->faker->lastName,
