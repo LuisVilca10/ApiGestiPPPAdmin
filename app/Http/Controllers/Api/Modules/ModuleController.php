@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\Modules;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Module\StoreModuleRequest;
 use App\Http\Requests\Module\UpdateModuleRequest;
 use App\Http\Resources\Module\MenuParentModuleResource;
@@ -30,11 +29,13 @@ class ModuleController
         $query = Module::with('parentModule');
 
         if ($name) {
-            $query->where('title', 'like', "%$name%")
-                ->orWhere('subtitle', 'like', "%$name%")
-                ->orWhere('code', 'like', "%$name%")
-                ->orWhere('type', 'like', "%$name%")
-                ->orWhere('link', 'like', "%$name%");
+            $query->where(function ($q) use ($name) {
+                $q->where('title', 'like', "%$name%")
+                  ->orWhere('subtitle', 'like', "%$name%")
+                  ->orWhere('code', 'like', "%$name%")
+                  ->orWhere('type', 'like', "%$name%")
+                  ->orWhere('link', 'like', "%$name%");
+            });
         }
 
         $data = $query->paginate($size, ['*'], 'page', $page + 1);

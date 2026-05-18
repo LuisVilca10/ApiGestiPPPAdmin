@@ -9,8 +9,6 @@ use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
-
 class UserController
 {
     use ApiResponseTrait;
@@ -84,7 +82,7 @@ class UserController
             return $this->errorResponse('Usuario no encontrado', 404);
         }
 
-        $data = $request->only(['name', 'last_name', 'code', 'username', 'email', 'academic_cycle', 'hours_of_practice']);
+        $data = $request->validated();
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);

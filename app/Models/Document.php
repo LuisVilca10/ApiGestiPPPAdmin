@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Visit;
 
 class Document extends Model
 {
@@ -43,6 +44,7 @@ class Document extends Model
         'document_path',
         'document_status',
         'practice_id',
+        'visit_id',
     ];
 
     // Siempre devuelve la URL pública completa
@@ -56,5 +58,10 @@ class Document extends Model
     public function practice()
     {
         return $this->belongsTo(Practice::class);
+    }
+
+    public function visit()
+    {
+        return $this->belongsTo(Visit::class);
     }
 }

@@ -49,7 +49,7 @@ class ParentModuleController
             $query->where('title', 'like', "%$name%");
         }
 
-        return ParentModuleResource::collection($query->get());
+        return $this->successResponse(ParentModuleResource::collection($query->get()));
     }
 
     /**
@@ -69,7 +69,7 @@ class ParentModuleController
     {
         $module = ParentModule::create($request->validated());
 
-        return new ParentModuleResource($module);
+        return (new ParentModuleResource($module))->response()->setStatusCode(201);
     }
 
     /**

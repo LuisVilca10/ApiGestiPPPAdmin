@@ -21,8 +21,16 @@ class ModuleRoleSeeder extends Seeder
         // Admin → todos los módulos
         Module::all()->each(fn($m) => $m->roles()->syncWithoutDetaching([$adminRole->id]));
 
-        // Estudiante → módulos de Prácticas y Seguimiento personal
-        $codigosEstudiante = ['PR01', '01', '02', '03', 'AC01', '05'];
+        // Estudiante → Inicio completo + Documentos completo + Evaluaciones
+        $codigosEstudiante = [
+            'PR01',  // Dashboard de Prácticas  (Inicio)
+            '01',    // Inscripción a Prácticas  (Inicio)
+            '02',    // Cartas de Presentación   (Docs)
+            'AC01',  // Cartas de Aceptación     (Docs)
+            '03',    // Bitácora de Documentos   (Docs)
+            'INF-01', // Informe de Prácticas    (Docs)
+            '05',    // Evaluaciones             (Seguimiento)
+        ];
 
         Module::whereIn('code', $codigosEstudiante)
             ->get()

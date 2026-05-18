@@ -23,6 +23,9 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['user_id', 'status'], 'idx_practices_user_status');
+            $table->index('status',              'idx_practices_status');
+            $table->index('created_at',          'idx_practices_created_at');
         });
     }
 

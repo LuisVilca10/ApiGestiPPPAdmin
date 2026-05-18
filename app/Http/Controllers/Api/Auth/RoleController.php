@@ -18,9 +18,9 @@ class RoleController
 
     public function index(Request $request)
     {
-        $pageSize = $request->get('size', 10);
-        $page     = $request->get('page', 0);
-        $name     = $request->get('name');
+        $pageSize = $request->input('size', 10);
+        $page     = $request->input('page', 0);
+        $name     = $request->input('name');
 
         $query = Role::query();
 

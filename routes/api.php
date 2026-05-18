@@ -141,6 +141,7 @@ Route::prefix('documents')->middleware(['auth:api', 'role:Admin|Estudiante'])->g
     Route::middleware('role:Admin')->group(function () {
         Route::post('/{id}/aprobar', [DocumentController::class, 'aprobar']);
         Route::post('/{id}/rechazar', [DocumentController::class, 'rechazar']);
+        Route::delete('/{id}', [DocumentController::class, 'destroy']);
     });
 });
 

@@ -23,8 +23,12 @@ return new class extends Migration
             ]);
             $table->unsignedBigInteger('practice_id');
             $table->foreign('practice_id')->references('id')->on('practices')->onDelete('cascade');
+            $table->unsignedBigInteger('visit_id')->nullable();
+            $table->foreign('visit_id')->references('id')->on('visits')->onDelete('set null');
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['practice_id', 'document_type'],   'idx_documents_practice_type');
+            $table->index(['practice_id', 'document_status'], 'idx_documents_practice_status');
         });
     }
 

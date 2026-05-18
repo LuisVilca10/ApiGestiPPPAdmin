@@ -17,12 +17,15 @@ return new class extends Migration
             $table->enum('visit_type', ['Inicio', 'Medio', 'Final']);
             $table->text('visit_notes');
             $table->decimal('visit_result', 5, 2);
+            $table->enum('visit_status', ['Programada', 'Realizada', 'Cancelada'])->default('Programada');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('practice_id');
             $table->foreign('practice_id')->references('id')->on('practices')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['practice_id', 'visit_status'], 'idx_visits_practice_status');
+            $table->index(['user_id', 'visit_status'],     'idx_visits_user_status');
         });
     }
 

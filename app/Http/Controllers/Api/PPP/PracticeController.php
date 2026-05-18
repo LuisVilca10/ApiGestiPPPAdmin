@@ -15,6 +15,7 @@ use App\Services\SunatService;
 use App\Traits\ApiResponseTrait;
 use App\Mail\PracticeApproved;
 use App\Mail\PracticeRejected;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -130,17 +131,140 @@ class PracticeController
         return $this->successResponse(Document::TIPOS_PERMITIDOS);
     }
 
-    public function downloadPlanTemplate()
+    public function downloadPlanTemplate(Request $request)
     {
+        $format = strtolower($request->input('format', 'pdf'));
+
+        if ($format === 'docx') {
+            $path     = public_path('templates/plan_practicas_template.docx');
+            $fileName = 'Plan_Practicas_Preprofesionales_UPeU.docx';
+            $mime     = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+            if (!file_exists($path)) {
+                $path = $this->generateDocxTemplate();
+            }
+
+            return response()->download($path, $fileName, ['Content-Type' => $mime]);
+        }
+
         $path = public_path('templates/plan_practicas_template.pdf');
 
         if (!file_exists($path)) {
-            return $this->errorResponse('Plantilla no disponible.', 404);
+            return $this->errorResponse('Plantilla PDF no disponible.', 404);
         }
 
         return response()->download($path, 'Plan_Practicas_Preprofesionales_UPeU.pdf', [
             'Content-Type' => 'application/pdf',
         ]);
+    }
+
+    private function generateDocxTemplate(): string
+    {
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $phpWord->setDefaultFontName('Arial');
+        $phpWord->setDefaultFontSize(11);
+
+        $boldStyle   = ['bold' => true];
+        $centerStyle = ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER];
+        $blueColor   = ['bold' => true, 'color' => '003399', 'size' => 14];
+
+        // ── PORTADA ───────────────────────────────────────────
+        $portada = $phpWord->addSection([
+            'marginTop'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2),
+            'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2),
+            'marginLeft'   => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(3),
+            'marginRight'  => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(3),
+        ]);
+
+        $portada->addText('UNIVERSIDAD PERUANA UNIÓN',
+            ['bold' => true, 'size' => 18],
+            $centerStyle
+        );
+        $portada->addText('FACULTAD DE INGENIERÍA Y ARQUITECTURA',
+            ['bold' => true, 'size' => 13],
+            $centerStyle
+        );
+        $portada->addText('Escuela Profesional de Administración',
+            ['bold' => true, 'size' => 12],
+            $centerStyle
+        );
+
+        $portada->addTextBreak(3);
+
+        $portada->addText('PLAN DE PRÁCTICAS PREPROFESIONALES',
+            ['bold' => true, 'size' => 14, 'allCaps' => true],
+            $centerStyle
+        );
+
+        $portada->addTextBreak(3);
+
+        // Tabla de datos
+        $table = $portada->addTable(['borderSize' => 6, 'borderColor' => '888888', 'width' => 9000, 'unit' => 'dxa']);
+
+        foreach (['Lugar', 'Área', 'Línea de carrera'] as $label) {
+            $table->addRow(600);
+            $cell = $table->addCell(3000, ['bgColor' => 'F5F5F5']);
+            $cell->addText($label, $boldStyle);
+            $table->addCell(6000)->addText('');
+        }
+
+        $portada->addTextBreak(3);
+        $portada->addText('Emitido por:', ['bold' => true, 'size' => 14], $centerStyle);
+        $portada->addText('________________________________________________', [], $centerStyle);
+        $portada->addText('Nombre del alumno / Código', ['size' => 11], $centerStyle);
+
+        $portada->addTextBreak(4);
+        $portada->addText('UPeU Juliaca, ' . now()->locale('es')->isoFormat('MMMM YYYY'),
+            $blueColor,
+            $centerStyle
+        );
+
+        // ── PÁGINA 2 — ÍNDICE ─────────────────────────────────
+        $indice = $phpWord->addSection([
+            'breakType'    => 'nextPage',
+            'marginTop'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2),
+            'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2),
+            'marginLeft'   => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(3),
+            'marginRight'  => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(2.5),
+        ]);
+
+        $indice->addText('PLANTILLA PROYECTO',
+            ['bold' => true, 'size' => 12, 'allCaps' => true],
+            $centerStyle
+        );
+        $indice->addTextBreak(1);
+
+        $secciones = [
+            '1.'  => 'INTRODUCCIÓN',
+            '2.'  => 'OBJETIVO',
+            ''    => 'OBJETIVOS ESPECÍFICOS',
+            '3.'  => 'ALCANCE',
+            '4.'  => 'NORMATIVIDAD / PROCESOS',
+            '5.'  => 'JUSTIFICACIÓN',
+            '6.'  => 'METODOLOGÍA DE TRABAJO',
+            '7.'  => 'EQUIPO DE TRABAJO',
+            '8.'  => 'ACTIVIDADES, CRONOGRAMA Y PRESUPUESTO',
+            '9.'  => 'DETALLE DEL PRESUPUESTO',
+            '10.' => 'ESTRATEGIAS POR IMPLEMENTAR',
+            '11.' => 'EVIDENCIAS QUE GENERAR',
+        ];
+
+        foreach ($secciones as $num => $titulo) {
+            $p = $indice->addTextRun(['spaceBefore' => 120, 'spaceAfter' => 120]);
+            if ($num) {
+                $p->addText("$num  ", $boldStyle);
+            } else {
+                $p->addText('      ', []);
+            }
+            $p->addText($titulo, $boldStyle);
+        }
+
+        // Guardar
+        $destPath = public_path('templates/plan_practicas_template.docx');
+        $writer   = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($destPath);
+
+        return $destPath;
     }
 
     public function practicesforselect(Request $request)
@@ -299,11 +423,24 @@ class PracticeController
             return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
         }
 
-        // Informe de Prácticas: la práctica debe tener al menos 1500 horas declaradas
-        if ($documentType === 'Informe de Practicas') {
-            if ($practice->hourse_practice < 1500) {
+        // Orden secuencial: cada documento requiere que el anterior esté aprobado
+        $prerequisitos = [
+            'Carta Aceptacion'          => 'Carta Presentacion',
+            'Plan de Practicas'         => 'Carta Aceptacion',
+            'Informe de Practicas'      => 'Plan de Practicas',
+            'Sustentacion de Practicas' => 'Informe de Practicas',
+        ];
+
+        if (isset($prerequisitos[$documentType])) {
+            $tipoRequerido = $prerequisitos[$documentType];
+            $prerequisitoOk = $practice->documents()
+                ->where('document_type', $tipoRequerido)
+                ->where('document_status', 'Aprobado')
+                ->exists();
+
+            if (!$prerequisitoOk) {
                 return $this->errorResponse(
-                    "El informe requiere una práctica de al menos 1500 horas. Esta práctica tiene {$practice->hourse_practice} horas declaradas.",
+                    "Debes tener el documento \"{$tipoRequerido}\" aprobado antes de subir este documento.",
                     422
                 );
             }

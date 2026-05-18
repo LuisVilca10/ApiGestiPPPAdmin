@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
-use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
@@ -84,12 +84,12 @@ class AuthController
     {
         $credentials = $request->only(['username', 'password']);
 
-        if (! $user = auth('api')->setTTL(config('jwt.ttl'))->attempt($credentials)) {
+        $token = auth('api')->attempt($credentials);
+        if (!$token) {
             return $this->errorResponse('Credenciales inválidas', 401);
         }
 
-        $user  = auth('api')->user();
-        $token = JWTAuth::fromUser($user);
+        $user = auth('api')->user();
 
         return $this->successResponse([
             'token'       => $token,
@@ -205,17 +205,13 @@ class AuthController
         }
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(ChangePasswordRequest $request)
     {
         $user = JWTAuth::parseToken()->authenticate();
 
         if (!$user) {
             return $this->errorResponse('Usuario no autenticado', 401);
         }
-
-        $request->validate([
-            'new_password' => 'required|string|min:8',
-        ]);
 
         $user->update([
             'password'             => bcrypt($request->new_password),

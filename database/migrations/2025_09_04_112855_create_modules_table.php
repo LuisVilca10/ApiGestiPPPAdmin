@@ -25,6 +25,7 @@ return new class extends Migration
             $table->foreign('parent_module_id')->references('id')->on('parent_modules')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['parent_module_id', 'status', 'moduleOrder'], 'idx_modules_parent_status_order');
         });
     }
 

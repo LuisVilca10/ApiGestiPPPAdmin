@@ -20,13 +20,13 @@ class UpdateParentModuleRequest extends ApiFormRequest
         $id = $this->route('id');
 
         return [
-            'title'       => ['required', 'string', 'max:100', Rule::unique('parent_modules', 'title')->ignore($id)],
-            'subtitle'    => ['required', 'string', 'max:100', Rule::unique('parent_modules', 'subtitle')->ignore($id)],
-            'code'        => ['nullable', 'string', Rule::unique('parent_modules', 'code')->ignore($id)],
-            'status'      => 'required|boolean',
-            'moduleOrder' => 'nullable|integer',
-            'type'        => 'required|string|max:100',
-            'link'        => 'required|string|max:500',
+            'title'       => ['sometimes', 'string', 'max:100', Rule::unique('parent_modules', 'title')->ignore($id)],
+            'subtitle'    => ['sometimes', 'string', 'max:100', Rule::unique('parent_modules', 'subtitle')->ignore($id)],
+            'code'        => ['sometimes', 'nullable', 'string', Rule::unique('parent_modules', 'code')->ignore($id)],
+            'status'      => 'sometimes|boolean',
+            'moduleOrder' => 'sometimes|nullable|integer',
+            'type'        => 'sometimes|string|max:100',
+            'link'        => 'sometimes|string|max:500',
         ];
     }
 

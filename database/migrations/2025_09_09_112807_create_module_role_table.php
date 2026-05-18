@@ -24,6 +24,7 @@ return new class extends Migration
 
 
             $table->unique(['module_id', 'role_id']);
+            $table->index('role_id', 'idx_module_role_role_id');
             $table->timestamps();
             $table->softDeletes();
         });
