@@ -99,20 +99,31 @@ class DocumentController
 
     private function asignarHorasSiCompleto(Practice $practice): void
     {
-        $tieneSustentacion = $practice->documents()
-            ->where('document_type', 'Sustentacion de Practicas')
-            ->exists();
-
-        if (!$tieneSustentacion) {
+        if ($practice->status === 'Cerrado') {
             return;
         }
 
-        $todosAprobados = !$practice->documents()
-            ->where('document_status', '!=', 'Aprobado')
+        // El evento cierra cuando la Constancia de Practica está aprobada
+        $constanciaAprobada = $practice->documents()
+            ->where('document_type', 'Constancia de Practica')
+            ->where('document_status', 'Aprobado')
             ->exists();
 
-        if ($todosAprobados) {
-            $practice->user->increment('hours_of_practice', $practice->hourse_practice);
+        if (!$constanciaAprobada) {
+            return;
         }
+
+        // Verificar que no haya documentos pendientes o rechazados
+        $hayPendientes = $practice->documents()
+            ->whereIn('document_status', ['En Proceso', 'Rechazado'])
+            ->exists();
+
+        if ($hayPendientes) {
+            return;
+        }
+
+        // Cerrar el evento y acumular horas al alumno
+        $practice->update(['status' => 'Cerrado']);
+        $practice->user->increment('hours_of_practice', $practice->hourse_practice);
     }
 }

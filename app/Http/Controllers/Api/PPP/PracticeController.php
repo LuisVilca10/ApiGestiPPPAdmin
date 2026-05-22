@@ -72,7 +72,7 @@ class PracticeController
             }
         }
 
-        if ($status && in_array($status, ['Pendiente', 'Aprobado', 'Rechazado'])) {
+        if ($status && in_array($status, ['Pendiente', 'Aprobado', 'Rechazado', 'Cerrado'])) {
             $query->where('status', $status);
         }
 
@@ -294,6 +294,17 @@ class PracticeController
     public function store(StorePracticeRequest $request)
     {
         $validated = $request->validated();
+
+        $practicaActiva = Practice::where('user_id', Auth::id())
+            ->where('status', 'Aprobado')
+            ->exists();
+
+        if ($practicaActiva) {
+            return $this->errorResponse(
+                'Ya tienes una práctica activa. Debes completarla antes de registrar una nueva.',
+                422
+            );
+        }
 
         $empresa = Empresa::updateOrCreate(
             ['ruc' => $validated['ruc']],

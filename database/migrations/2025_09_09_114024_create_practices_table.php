@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->string('activity_student');
             $table->integer('hourse_practice');
-            $table->enum('status', ['Pendiente', 'Aprobado', 'Rechazado'])->default('Pendiente');
+            $table->enum('status', ['Pendiente', 'Aprobado', 'Rechazado', 'Cerrado'])->default('Pendiente');
             $table->text('rejection_reason')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
