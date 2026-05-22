@@ -1,62 +1,151 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ApiGestiPPPAdmin
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST para la gestión de Prácticas Pre-Profesionales (PPP) — Universidad Peruana Unión (UPeU).
+Desarrollada en **Laravel 11** con autenticación JWT y permisos por roles (Spatie).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Flujo de Prácticas Pre-Profesionales
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Regla base
+Un alumno tiene **una práctica activa a la vez**. Cada práctica es un evento que se abre y se cierra.
+Las horas se acumulan entre eventos hasta llegar a **1500 horas** totales.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```
+[Evento 1: Empresa A → 300h → CERRADO]
+[Evento 2: Empresa B → 500h → CERRADO]
+[Evento 3: Empresa C → 700h → ACTIVO ]
+                  Total acumulado: 1500h ✓
+```
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Documentos por evento (6 hitos principales)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+| # | Documento | Quién sube | Quién aprueba | Notas |
+|---|---|---|---|---|
+| 1 | `Carta Presentacion` | Sistema (auto-generada) | — | Abre el evento |
+| 2 | `Carta Aceptacion` | Estudiante | Encargado de Prácticas | La empresa acepta al alumno |
+| 3 | `Plan de Practicas` | Estudiante | Encargado de Prácticas | Define actividades y fechas; habilita las 3 visitas del Docente |
+| 4 | `Modulo de Evaluacion` | Docente (3 fichas) + Estudiante (1 informe jefe) | Encargado de Prácticas | 3 fichas de visita (Inicio, Medio, Final) + Informe del jefe/dueño de empresa |
+| 5 | `Informe de Practicas` | Estudiante | Encargado de Prácticas | Incluye autoevaluación académica |
+| 6 | `Constancia de Practica` | Estudiante (empresa la firma y entrega) | Encargado de Prácticas | Certifica horas trabajadas; cierra el evento |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+> El sistema suma automáticamente las horas del evento al contador global al aprobarse la Constancia.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Detalle del Módulo de Evaluación (Hito 4)
 
-### Premium Partners
+El Módulo de Evaluación es un sistema estructurado de 4 documentos que miden el desempeño del practicante:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Sub-documento | Quién genera | Cuándo |
+|---|---|---|
+| `Ficha Visita Inicio` | Docente (visita a la empresa) | Al inicio de la práctica |
+| `Ficha Visita Medio` | Docente (visita a la empresa) | A mitad del periodo |
+| `Ficha Visita Final` | Docente (visita a la empresa) | Al término del periodo |
+| `Informe Jefe Empresa` | Empresa (firma/sella) → sube el Estudiante | Al finalizar la práctica |
 
-## Contributing
+> Las visitas se habilitan una vez aprobado el Plan de Prácticas (Hito 3).
+> Cada ficha de visita se vincula a su registro en la tabla `visits` mediante `visit_id`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+### Hito final de carrera (fuera del bucle por evento)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```
+Contador global >= 1500h con todos los eventos en estado "Aprobado"
+                        ↓
+        Sustentacion de Practicas (ante jurado de facultad)
+                        ↓
+        Estado del alumno: PPP Completadas / Apto para Grado
+```
 
-## Security Vulnerabilities
+> La Sustentación **no pertenece al ciclo por evento**. Es un acto académico único al completar las 1500h.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Roles del Sistema
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-"# ApiGestiPPPAdmin" 
+| Rol | Responsabilidades principales |
+|---|---|
+| **Admin** | Gestión total del sistema |
+| **Encargado de Prácticas** | Aprueba/rechaza todos los documentos, firma documentos finales, gestiona el proceso completo |
+| **Coordinador** | Genera informes globales, firma la Sustentación |
+| **Docente** | Sube las 3 fichas de visita (Inicio, Medio, Final) por práctica |
+| **Estudiante** | Sube Carta Aceptación, Plan de Prácticas, Informe Jefe Empresa, Informe de Prácticas, Constancia |
+
+---
+
+## Cambios Pendientes en el Código
+
+### 1. Modelo `Document` — tipos a actualizar
+
+**Eliminar del flujo por evento:**
+- `Plan de Practicas` → renombrar a como corresponde o mantener
+- `Evaluacion Jefe Inmediato` → renombrar a `Informe Jefe Empresa`
+- `Monitoreo y Evaluacion` → renombrar a `Ficha Visita` (se distingue por `visit_type`)
+- `Sustentacion de Practicas` → mover al hito final de carrera (flujo separado)
+
+**Agregar:**
+- `Constancia de Practica`
+
+**Lista final de `TIPOS_PERMITIDOS`:**
+```php
+const TIPOS_PERMITIDOS = [
+    'Carta Presentacion',   // 1 - Auto-generada
+    'Carta Aceptacion',     // 2 - Estudiante
+    'Plan de Practicas',    // 3 - Estudiante
+    'Ficha Visita',         // 4 - Docente (linked to visit_id)
+    'Informe Jefe Empresa', // 4d - Estudiante
+    'Informe de Practicas', // 5 - Estudiante
+    'Constancia de Practica', // 6 - Estudiante
+];
+```
+
+### 2. Migración `visits` — `visit_type` tiene 3 valores correctos
+```php
+$table->enum('visit_type', ['Inicio', 'Medio', 'Final']); // correcto
+```
+
+### 3. Migración `documents` — `visit_id` ya agregado
+```php
+$table->unsignedBigInteger('visit_id')->nullable();
+$table->foreign('visit_id')->references('id')->on('visits')->onDelete('set null');
+```
+
+### 4. Lógica de prerequisitos en `PracticeController`
+
+Orden secuencial a respetar:
+```
+Carta Presentacion → Carta Aceptacion → Plan de Practicas
+→ (habilita visitas del Docente)
+→ Informe Jefe Empresa → Informe de Practicas → Constancia de Practica
+```
+
+### 5. Seeder de roles y permisos — pendiente implementar
+- Crear roles: Encargado de Prácticas, Coordinador, Docente
+- Asignar permisos por documento según la tabla de roles
+- Actualizar rutas con middleware de rol correcto
+
+---
+
+## Stack Tecnológico
+
+- **Laravel 11**
+- **JWT Auth** — php-open-source-saver/jwt-auth
+- **Spatie Laravel Permission** — roles y permisos
+- **MySQL** — con softDeletes e índices de rendimiento en todas las tablas principales
+
+---
+
+## Instalación
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan jwt:secret
+php artisan migrate --seed
+php artisan storage:link
+```
