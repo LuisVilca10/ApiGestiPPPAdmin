@@ -1,0 +1,907 @@
+{
+  "info": {
+    "name": "ApiGestiPPPAdmin",
+    "description": "API REST para gestión de Prácticas Pre-Profesionales — UPeU.\n\n**Variables de entorno:**\n- `base_url`: http://localhost:8000/api\n- `token`: se llena automáticamente al hacer login\n\n**Flujo de autenticación:**\n1. Ejecuta `POST /login`\n2. Copia el token de la respuesta en la variable `token`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api", "type": "string" },
+    { "key": "token",    "value": "",                          "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@upeu.edu.pe\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/register", "host": ["{{base_url}}"], "path": ["register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan\",\n  \"last_name\": \"Perez\",\n  \"email\": \"juan.perez@upeu.edu.pe\",\n  \"code\": \"2021100001\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/logout", "host": ["{{base_url}}"], "path": ["logout"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/auth/refresh", "host": ["{{base_url}}"], "path": ["auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Get Perfil",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/perfil", "host": ["{{base_url}}"], "path": ["perfil"] }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/current-user", "host": ["{{base_url}}"], "path": ["current-user"] }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/update-profile", "host": ["{{base_url}}"], "path": ["update-profile"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan\",\n  \"last_name\": \"Perez\",\n  \"email\": \"juan.perez@upeu.edu.pe\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Upload Photo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/upload-photo", "host": ["{{base_url}}"], "path": ["upload-photo"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "photo", "type": "file", "src": "" }]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/change-password", "host": ["{{base_url}}"], "path": ["change-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"nuevaPassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "02 - Email Verification",
+      "item": [
+        {
+          "name": "Send Code",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/email/send-code", "host": ["{{base_url}}"], "path": ["email", "send-code"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan.perez@upeu.edu.pe\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Get Email Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/email/status", "host": ["{{base_url}}"], "path": ["email", "status"] }
+          }
+        },
+        {
+          "name": "Send Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/email/send-verification", "host": ["{{base_url}}"], "path": ["email", "send-verification"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "03 - Users",
+      "description": "Solo Admin",
+      "item": [
+        {
+          "name": "Listar Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users?page=0&size=10&search=",
+              "host": ["{{base_url}}"], "path": ["users"],
+              "query": [
+                { "key": "page",   "value": "0"  },
+                { "key": "size",   "value": "10" },
+                { "key": "search", "value": ""   }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver Usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/users/1", "host": ["{{base_url}}"], "path": ["users", "1"] }
+          }
+        },
+        {
+          "name": "Crear Usuario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria\",\n  \"last_name\": \"Lopez\",\n  \"email\": \"maria.lopez@upeu.edu.pe\",\n  \"code\": \"2021100002\",\n  \"password\": \"password123\",\n  \"role\": \"Estudiante\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Actualizar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/users/1", "host": ["{{base_url}}"], "path": ["users", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria\",\n  \"last_name\": \"Lopez\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Eliminar Usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/users/1", "host": ["{{base_url}}"], "path": ["users", "1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "04 - Roles",
+      "item": [
+        {
+          "name": "Listar Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/role?page=0&size=10",
+              "host": ["{{base_url}}"], "path": ["role"],
+              "query": [
+                { "key": "page", "value": "0"  },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver Rol",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/role/1", "host": ["{{base_url}}"], "path": ["role", "1"] }
+          }
+        },
+        {
+          "name": "Crear Rol",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/role", "host": ["{{base_url}}"], "path": ["role"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nuevo Rol\",\n  \"description\": \"Descripción del rol\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Actualizar Rol",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/role/1", "host": ["{{base_url}}"], "path": ["role", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rol Actualizado\",\n  \"description\": \"Nueva descripción\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Eliminar Rol",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/role/1", "host": ["{{base_url}}"], "path": ["role", "1"] }
+          }
+        },
+        {
+          "name": "Asignar Rol a Usuario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/role/assign-role/1", "host": ["{{base_url}}"], "path": ["role", "assign-role", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Estudiante\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Remover Rol de Usuario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/role/remove-role/1", "host": ["{{base_url}}"], "path": ["role", "remove-role", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Estudiante\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Asignar Módulos a Rol",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/role/assign-modules/1", "host": ["{{base_url}}"], "path": ["role", "assign-modules", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modules\": [1, 2, 3]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "05 - Parent Modules",
+      "item": [
+        {
+          "name": "Listar (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/parent-module?page=0&size=10&name=",
+              "host": ["{{base_url}}"], "path": ["parent-module"],
+              "query": [
+                { "key": "page", "value": "0"  },
+                { "key": "size", "value": "10" },
+                { "key": "name", "value": ""   }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar (sin paginación)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/parent-module/list", "host": ["{{base_url}}"], "path": ["parent-module", "list"] }
+          }
+        },
+        {
+          "name": "Listar con Módulos Detalle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/parent-module/list-detail-module-list", "host": ["{{base_url}}"], "path": ["parent-module", "list-detail-module-list"] }
+          }
+        },
+        {
+          "name": "Ver Parent Module",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/parent-module/1", "host": ["{{base_url}}"], "path": ["parent-module", "1"] }
+          }
+        },
+        {
+          "name": "Crear Parent Module",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/parent-module", "host": ["{{base_url}}"], "path": ["parent-module"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Prácticas Pre-Profesionales\",\n  \"subtitle\": \"Gestión PPP\",\n  \"code\": \"PPP\",\n  \"status\": true,\n  \"moduleOrder\": 1,\n  \"type\": \"menu\",\n  \"link\": \"/ppp\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Actualizar Parent Module",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/parent-module/1", "host": ["{{base_url}}"], "path": ["parent-module", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"PPP Actualizado\",\n  \"status\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Eliminar Parent Module",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/parent-module/1", "host": ["{{base_url}}"], "path": ["parent-module", "1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "06 - Modules",
+      "item": [
+        {
+          "name": "Listar Módulos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/module?page=0&size=10&name=",
+              "host": ["{{base_url}}"], "path": ["module"],
+              "query": [
+                { "key": "page", "value": "0"  },
+                { "key": "size", "value": "10" },
+                { "key": "name", "value": ""   }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Menú del Usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/module/menu", "host": ["{{base_url}}"], "path": ["module", "menu"] }
+          }
+        },
+        {
+          "name": "Módulos Seleccionados por Rol",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/module/modules-selected/1/1", "host": ["{{base_url}}"], "path": ["module", "modules-selected", "1", "1"] }
+          }
+        },
+        {
+          "name": "Ver Módulo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/module/1", "host": ["{{base_url}}"], "path": ["module", "1"] }
+          }
+        },
+        {
+          "name": "Crear Módulo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/module", "host": ["{{base_url}}"], "path": ["module"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Mis Prácticas\",\n  \"subtitle\": \"Ver mis prácticas registradas\",\n  \"type\": \"page\",\n  \"code\": \"MIS_PRACTICAS\",\n  \"icon\": \"mdi-briefcase\",\n  \"status\": true,\n  \"moduleOrder\": 1,\n  \"link\": \"/practicas/mis-practicas\",\n  \"parent_module_id\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Actualizar Módulo",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/module/1", "host": ["{{base_url}}"], "path": ["module", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Módulo Actualizado\",\n  \"status\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Eliminar Módulo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/module/1", "host": ["{{base_url}}"], "path": ["module", "1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "07 - Empresas",
+      "item": [
+        {
+          "name": "Listar Empresas (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/empresa?page=0&size=10&search=",
+              "host": ["{{base_url}}"], "path": ["empresa"],
+              "query": [
+                { "key": "page",   "value": "0"  },
+                { "key": "size",   "value": "10" },
+                { "key": "search", "value": ""   }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Empresas (select)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/empresa/list", "host": ["{{base_url}}"], "path": ["empresa", "list"] }
+          }
+        },
+        {
+          "name": "Ver Empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/empresa/1", "host": ["{{base_url}}"], "path": ["empresa", "1"] }
+          }
+        },
+        {
+          "name": "Crear Empresa",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/empresa", "host": ["{{base_url}}"], "path": ["empresa"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"20601234567\",\n  \"name_empresa\": \"Tech Solutions SAC\",\n  \"name_represent\": \"Carlos\",\n  \"lastname_represent\": \"Mamani\",\n  \"trate_represent\": \"Sr.\",\n  \"phone_represent\": \"951234567\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Actualizar Empresa",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/empresa/1", "host": ["{{base_url}}"], "path": ["empresa", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name_empresa\": \"Tech Solutions SAC Actualizado\",\n  \"phone_represent\": \"952345678\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Eliminar Empresa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/empresa/1", "host": ["{{base_url}}"], "path": ["empresa", "1"] }
+          }
+        },
+        {
+          "name": "Lookup RUC (SUNAT)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/ruc/20601234567", "host": ["{{base_url}}"], "path": ["ruc", "20601234567"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "08 - Practices",
+      "item": [
+        {
+          "name": "Listar Prácticas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/practice?page=0&size=10&search=&status=&periodo=",
+              "host": ["{{base_url}}"], "path": ["practice"],
+              "query": [
+                { "key": "page",    "value": "0"  },
+                { "key": "size",    "value": "10" },
+                { "key": "search",  "value": ""   },
+                { "key": "status",  "value": ""   },
+                { "key": "periodo", "value": ""   }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver Períodos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/periodos", "host": ["{{base_url}}"], "path": ["practice", "periodos"] }
+          }
+        },
+        {
+          "name": "Tipos de Documento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/tipos-documento", "host": ["{{base_url}}"], "path": ["practice", "tipos-documento"] }
+          }
+        },
+        {
+          "name": "Prácticas para Select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/practicesforselect", "host": ["{{base_url}}"], "path": ["practice", "practicesforselect"] }
+          }
+        },
+        {
+          "name": "Descargar Plantilla Plan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/practice/template/plan-practicas?format=pdf",
+              "host": ["{{base_url}}"], "path": ["practice", "template", "plan-practicas"],
+              "query": [{ "key": "format", "value": "pdf" }]
+            }
+          }
+        },
+        {
+          "name": "Ver Práctica",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/1", "host": ["{{base_url}}"], "path": ["practice", "1"] }
+          }
+        },
+        {
+          "name": "Documentos por Práctica",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/practice/documents/1?page=0&size=10",
+              "host": ["{{base_url}}"], "path": ["practice", "documents", "1"],
+              "query": [
+                { "key": "page", "value": "0"  },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear Práctica (Estudiante)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/practice", "host": ["{{base_url}}"], "path": ["practice"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"20601234567\",\n  \"name_empresa\": \"Tech Solutions SAC\",\n  \"name_represent\": \"Carlos\",\n  \"lastname_represent\": \"Mamani\",\n  \"trate_represent\": \"Sr.\",\n  \"phone_represent\": \"951234567\",\n  \"activity_student\": \"Desarrollo de software web con Laravel y Vue.js\",\n  \"hourse_practice\": 300\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Aprobar Práctica (Encargado)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/1/aprobar", "host": ["{{base_url}}"], "path": ["practice", "1", "aprobar"] }
+          }
+        },
+        {
+          "name": "Rechazar Práctica (Encargado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/practice/1/rechazar", "host": ["{{base_url}}"], "path": ["practice", "1", "rechazar"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejection_reason\": \"La empresa no está habilitada en SUNAT.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Subir Documento — Carta Aceptacion (Estudiante)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/upload-document", "host": ["{{base_url}}"], "path": ["practice", "upload-document"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "practice_id",   "value": "1",                  "type": "text" },
+                { "key": "document_type", "value": "Carta Aceptacion",   "type": "text" },
+                { "key": "file",          "type": "file",                "src": ""      }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Subir Documento — Plan de Practicas (Estudiante)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/upload-document", "host": ["{{base_url}}"], "path": ["practice", "upload-document"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "practice_id",   "value": "1",                "type": "text" },
+                { "key": "document_type", "value": "Plan de Practicas","type": "text" },
+                { "key": "file",          "type": "file",              "src": ""      }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Subir Documento — Ficha Visita (Docente)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/upload-document", "host": ["{{base_url}}"], "path": ["practice", "upload-document"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "practice_id",   "value": "1",           "type": "text" },
+                { "key": "document_type", "value": "Ficha Visita","type": "text" },
+                { "key": "visit_id",      "value": "1",           "type": "text" },
+                { "key": "file",          "type": "file",         "src": ""      }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Subir Documento — Informe Jefe Empresa (Estudiante)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/upload-document", "host": ["{{base_url}}"], "path": ["practice", "upload-document"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "practice_id",   "value": "1",                    "type": "text" },
+                { "key": "document_type", "value": "Informe Jefe Empresa", "type": "text" },
+                { "key": "file",          "type": "file",                  "src": ""      }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Subir Documento — Informe de Practicas (Estudiante)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/upload-document", "host": ["{{base_url}}"], "path": ["practice", "upload-document"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "practice_id",   "value": "1",                    "type": "text" },
+                { "key": "document_type", "value": "Informe de Practicas", "type": "text" },
+                { "key": "file",          "type": "file",                  "src": ""      }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Subir Documento — Constancia de Practica (Estudiante)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/practice/upload-document", "host": ["{{base_url}}"], "path": ["practice", "upload-document"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "practice_id",   "value": "1",                       "type": "text" },
+                { "key": "document_type", "value": "Constancia de Practica",  "type": "text" },
+                { "key": "file",          "type": "file",                     "src": ""      }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "09 - Documents",
+      "item": [
+        {
+          "name": "Listar Documentos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/documents?page=0&size=10",
+              "host": ["{{base_url}}"], "path": ["documents"],
+              "query": [
+                { "key": "page", "value": "0"  },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Aprobar Documento (Encargado)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/documents/1/aprobar", "host": ["{{base_url}}"], "path": ["documents", "1", "aprobar"] }
+          }
+        },
+        {
+          "name": "Rechazar Documento (Encargado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/documents/1/rechazar", "host": ["{{base_url}}"], "path": ["documents", "1", "rechazar"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejection_reason\": \"El documento no tiene la firma del representante legal.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Eliminar Documento (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/documents/1", "host": ["{{base_url}}"], "path": ["documents", "1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "10 - Visits",
+      "item": [
+        {
+          "name": "Listar Visitas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/visits?page=0&size=10&practice_id=",
+              "host": ["{{base_url}}"], "path": ["visits"],
+              "query": [
+                { "key": "page",        "value": "0"  },
+                { "key": "size",        "value": "10" },
+                { "key": "practice_id", "value": ""   }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver Visita",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"] }
+          }
+        },
+        {
+          "name": "Crear Visita (Docente)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/visits", "host": ["{{base_url}}"], "path": ["visits"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"practice_id\": 1,\n  \"visit_date\": \"2025-10-15 10:00:00\",\n  \"visit_type\": \"Inicio\",\n  \"visit_notes\": \"El estudiante mostró buena disposición. Se revisaron las actividades del plan de trabajo.\",\n  \"visit_result\": 16.50,\n  \"visit_status\": \"Realizada\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Actualizar Visita (Docente)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visit_notes\": \"Notas actualizadas tras segunda revisión.\",\n  \"visit_result\": 17.00,\n  \"visit_status\": \"Realizada\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Eliminar Visita (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "11 - Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/dashboard", "host": ["{{base_url}}"], "path": ["dashboard"] }
+          }
+        }
+      ]
+    }
+
+  ]
+}
