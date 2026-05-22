@@ -418,21 +418,37 @@ class PracticeController
             return $this->errorResponse('Solo se pueden subir documentos a prácticas aprobadas', 422);
         }
 
-        // Tipos reservados para Admin: docente y evaluaciones externas
+        // Solo el Docente puede subir Ficha Visita
+        if (in_array($documentType, Document::TIPOS_DOCENTE) && !$user->hasAnyRole(['Admin', 'Docente'])) {
+            return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
+        }
+
+        // Solo Admin puede subir Sustentacion de Practicas
         if (in_array($documentType, Document::TIPOS_ADMIN) && !$user->hasRole('Admin')) {
             return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
         }
 
+        // Solo el Estudiante puede subir sus tipos
+        if (in_array($documentType, Document::TIPOS_ESTUDIANTE) && !$user->hasAnyRole(['Admin', 'Estudiante'])) {
+            return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
+        }
+
+        // Ficha Visita requiere visit_id obligatorio
+        if ($documentType === 'Ficha Visita' && !$request->visit_id) {
+            return $this->errorResponse('Debes indicar el visit_id para subir una Ficha de Visita.', 422);
+        }
+
         // Orden secuencial: cada documento requiere que el anterior esté aprobado
         $prerequisitos = [
-            'Carta Aceptacion'          => 'Carta Presentacion',
-            'Plan de Practicas'         => 'Carta Aceptacion',
-            'Informe de Practicas'      => 'Plan de Practicas',
-            'Sustentacion de Practicas' => 'Informe de Practicas',
+            'Carta Aceptacion'       => 'Carta Presentacion',
+            'Plan de Practicas'      => 'Carta Aceptacion',
+            'Ficha Visita'           => 'Plan de Practicas',
+            'Informe Jefe Empresa'   => 'Plan de Practicas',
+            'Constancia de Practica' => 'Informe de Practicas',
         ];
 
         if (isset($prerequisitos[$documentType])) {
-            $tipoRequerido = $prerequisitos[$documentType];
+            $tipoRequerido  = $prerequisitos[$documentType];
             $prerequisitoOk = $practice->documents()
                 ->where('document_type', $tipoRequerido)
                 ->where('document_status', 'Aprobado')
@@ -446,10 +462,38 @@ class PracticeController
             }
         }
 
+        // Informe de Practicas requiere las 3 Fichas de Visita + Informe Jefe Empresa aprobados
+        if ($documentType === 'Informe de Practicas') {
+            $fichasAprobadas = $practice->documents()
+                ->where('document_type', 'Ficha Visita')
+                ->where('document_status', 'Aprobado')
+                ->count();
+
+            if ($fichasAprobadas < 3) {
+                return $this->errorResponse(
+                    'Debes tener las 3 Fichas de Visita (Inicio, Medio, Final) aprobadas antes de subir el Informe de Prácticas.',
+                    422
+                );
+            }
+
+            $informeJefeOk = $practice->documents()
+                ->where('document_type', 'Informe Jefe Empresa')
+                ->where('document_status', 'Aprobado')
+                ->exists();
+
+            if (!$informeJefeOk) {
+                return $this->errorResponse(
+                    'Debes tener el "Informe Jefe Empresa" aprobado antes de subir el Informe de Prácticas.',
+                    422
+                );
+            }
+        }
+
         $document = $this->documentService->upload(
             $request->practice_id,
             $documentType,
-            $request->file('file')
+            $request->file('file'),
+            $request->visit_id ? (int) $request->visit_id : null
         );
 
         return (new DocumentResource($document->load('practice')))->response()->setStatusCode(201);

@@ -2,47 +2,91 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleAndPermissionsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permisos = [
+            // Usuarios
             'ver_usuarios',
             'crear_usuarios',
             'editar_usuarios',
             'eliminar_usuarios',
             'editar_perfil',
+            'editar_roles',
+            // Módulos
             'formulario',
-            'editar_roles'
+            // Prácticas
+            'gestionar_practicas',    // ver todas las prácticas, aprobar/rechazar
+            'gestionar_documentos',   // aprobar/rechazar documentos
+            'subir_ficha_visita',     // el Docente sube fichas de visita
+            'gestionar_visitas',      // el Docente registra y edita visitas
+            // Reportes y cierre
+            'ver_reportes',           // Coordinador: informes globales
+            'registrar_sustentacion', // Admin/Coordinador: registra resultado de sustentación
         ];
 
-        // Crear permisos
         foreach ($permisos as $permiso) {
             Permission::firstOrCreate(['name' => $permiso, 'guard_name' => 'api']);
         }
 
-        // Crear roles y asignarles permisos
+        // ── Admin ────────────────────────────────────────────────────────────
         $admin = Role::firstOrCreate(
-            ['name' => 'Admin', 'guard_name' => 'api'], // Asegúrate de usar 'api' aquí
-            ['description' => 'Administrador con todos los permisos del sistema']
+            ['name' => 'Admin', 'guard_name' => 'api'],
+            ['description' => 'Administrador con acceso total al sistema']
         );
-        $admin->syncPermissions(Permission::all()); // Sincroniza todos los permisos con este rol
+        $admin->syncPermissions(Permission::all());
 
-        $estudent = Role::firstOrCreate(
-            ['name' => 'Estudiante', 'guard_name' => 'api'], // Asegúrate de usar 'api' aquí
-            ['description' => 'Estudiante habilitado para hacer practicas']
+        // ── Encargado de Practicas ───────────────────────────────────────────
+        $encargado = Role::firstOrCreate(
+            ['name' => 'Encargado de Practicas', 'guard_name' => 'api'],
+            ['description' => 'Revisa y aprueba documentos; gestiona el proceso completo de prácticas']
         );
-        $estudent->syncPermissions([
+        $encargado->syncPermissions([
+            'editar_perfil',
+            'formulario',
+            'gestionar_practicas',
+            'gestionar_documentos',
+            'ver_reportes',
+        ]);
+
+        // ── Coordinador ──────────────────────────────────────────────────────
+        $coordinador = Role::firstOrCreate(
+            ['name' => 'Coordinador', 'guard_name' => 'api'],
+            ['description' => 'Genera informes globales y firma la sustentación final']
+        );
+        $coordinador->syncPermissions([
+            'editar_perfil',
+            'formulario',
+            'ver_reportes',
+            'registrar_sustentacion',
+        ]);
+
+        // ── Docente ──────────────────────────────────────────────────────────
+        $docente = Role::firstOrCreate(
+            ['name' => 'Docente', 'guard_name' => 'api'],
+            ['description' => 'Realiza visitas a empresas y sube fichas de evaluación']
+        );
+        $docente->syncPermissions([
+            'editar_perfil',
+            'formulario',
+            'subir_ficha_visita',
+            'gestionar_visitas',
+        ]);
+
+        // ── Estudiante ───────────────────────────────────────────────────────
+        $estudiante = Role::firstOrCreate(
+            ['name' => 'Estudiante', 'guard_name' => 'api'],
+            ['description' => 'Alumno habilitado para registrar y gestionar sus prácticas']
+        );
+        $estudiante->syncPermissions([
+            'editar_perfil',
             'formulario',
         ]);
     }

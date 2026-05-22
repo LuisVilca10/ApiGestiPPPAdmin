@@ -13,29 +13,35 @@ class Document extends Model
 {
     use HasFactory, SoftDeletes;
 
-    // Flujo oficial de documentos PPP en orden cronológico
+    // Flujo oficial de documentos PPP en orden cronológico (6 hitos por evento)
     const TIPOS_PERMITIDOS = [
-        'Carta Presentacion',          // 1 - Auto-generada al aprobar la práctica
-        'Carta Aceptacion',            // 2 - Estudiante sube (empresa acepta)
-        'Plan de Practicas',           // 3 - Estudiante sube su plan
-        'Monitoreo y Evaluacion',      // 4 - Docente de la EP sube evaluación de seguimiento
-        'Evaluacion Jefe Inmediato',   // 5 - Admin sube evaluación del jefe de empresa
-        'Informe de Practicas',        // 6 - Estudiante sube (requiere 1500h completadas)
-        'Sustentacion de Practicas',   // 7 - Admin/Docente registra resultado de sustentación
+        'Carta Presentacion',      // 1 - Sistema auto-genera al aprobar la práctica
+        'Carta Aceptacion',        // 2 - Estudiante (empresa acepta al alumno)
+        'Plan de Practicas',       // 3 - Estudiante (define actividades y fechas; habilita visitas)
+        'Ficha Visita',            // 4 - Docente (una por visita: Inicio, Medio, Final) vinculada a visit_id
+        'Informe Jefe Empresa',    // 4d - Estudiante (empresa firma/sella, alumno sube)
+        'Informe de Practicas',    // 5 - Estudiante (incluye autoevaluación)
+        'Constancia de Practica',  // 6 - Estudiante (empresa certifica horas; cierra el evento)
+        'Sustentacion de Practicas', // Hito final de carrera (fuera del ciclo por evento)
     ];
 
-    // Tipos que solo el admin/docente puede subir
+    // Solo el Docente puede subir
+    const TIPOS_DOCENTE = [
+        'Ficha Visita',
+    ];
+
+    // Solo Admin puede subir
     const TIPOS_ADMIN = [
-        'Monitoreo y Evaluacion',
-        'Evaluacion Jefe Inmediato',
         'Sustentacion de Practicas',
     ];
 
-    // Tipos que el estudiante puede subir
+    // Tipos que el Estudiante puede subir
     const TIPOS_ESTUDIANTE = [
         'Carta Aceptacion',
         'Plan de Practicas',
+        'Informe Jefe Empresa',
         'Informe de Practicas',
+        'Constancia de Practica',
     ];
 
     protected $fillable = [

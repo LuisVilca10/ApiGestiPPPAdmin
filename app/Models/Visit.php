@@ -16,17 +16,23 @@ class Visit extends Model
         'visit_type',
         'visit_notes',
         'visit_result',
+        'visit_status',
         'user_id',
-        'practice_id'
+        'practice_id',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class); // Una visita pertenece a un solo usuario
+        return $this->belongsTo(User::class);
     }
 
     public function practice()
     {
-        return $this->belongsTo(Practice::class); // Una visita pertenece a una sola práctica
+        return $this->belongsTo(Practice::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(Document::class);
     }
 }

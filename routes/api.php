@@ -119,26 +119,29 @@ Route::prefix('empresa')->group(function () {
 
 // **********************************************RUTAS DE TRAMITES ********************************************************************
 
-Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante|Encargado de Practicas|Coordinador|Docente'])->group(function () {
     Route::get('/', [PracticeController::class, 'index']);
     Route::get('/periodos', [PracticeController::class, 'periodos']);
     Route::get('/tipos-documento', [PracticeController::class, 'tiposDocumento']);
     Route::get('/practicesforselect', [PracticeController::class, 'practicesforselect']);
     Route::get('/template/plan-practicas', [PracticeController::class, 'downloadPlanTemplate']);
     Route::get('/documents/{id}', [PracticeController::class, 'documentsByPractice']);
-    Route::post('/', [PracticeController::class, 'store']);
-    Route::post('/upload-document', [PracticeController::class, 'storeDocumentPractice']);
     Route::get('/{id}', [PracticeController::class, 'show']);
-    // Solo Admin puede aprobar o rechazar
-    Route::middleware('role:Admin')->group(function () {
+    // Solo Estudiante puede registrar su práctica
+    Route::middleware('role:Admin|Estudiante')->post('/', [PracticeController::class, 'store']);
+    // Estudiante y Docente suben documentos
+    Route::middleware('role:Admin|Estudiante|Docente')->post('/upload-document', [PracticeController::class, 'storeDocumentPractice']);
+    // Encargado de Practicas aprueba o rechaza
+    Route::middleware('role:Admin|Encargado de Practicas')->group(function () {
         Route::post('/{id}/aprobar', [PracticeController::class, 'approve']);
         Route::post('/{id}/rechazar', [PracticeController::class, 'reject']);
     });
 });
 
-Route::prefix('documents')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+Route::prefix('documents')->middleware(['auth:api', 'role:Admin|Estudiante|Encargado de Practicas|Coordinador|Docente'])->group(function () {
     Route::get('/', [DocumentController::class, 'indexForStudent']);
-    Route::middleware('role:Admin')->group(function () {
+    // Encargado de Practicas aprueba o rechaza documentos
+    Route::middleware('role:Admin|Encargado de Practicas')->group(function () {
         Route::post('/{id}/aprobar', [DocumentController::class, 'aprobar']);
         Route::post('/{id}/rechazar', [DocumentController::class, 'rechazar']);
         Route::delete('/{id}', [DocumentController::class, 'destroy']);
@@ -148,20 +151,20 @@ Route::prefix('documents')->middleware(['auth:api', 'role:Admin|Estudiante'])->g
 // **********************************************RUTAS DE DASHBOARD ********************************************************************
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth:api', 'role:Admin|Estudiante']);
+    ->middleware(['auth:api', 'role:Admin|Estudiante|Encargado de Practicas|Coordinador|Docente']);
 
 // **********************************************RUTA LOOKUP DE RUC ********************************************************************
 
 Route::get('/ruc/{ruc}', [RucController::class, 'lookup'])
-    ->middleware(['auth:api', 'role:Admin|Estudiante']);
+    ->middleware(['auth:api', 'role:Admin|Estudiante|Encargado de Practicas']);
 
 // **********************************************RUTAS DE VISITAS (BITÁCORA) ********************************************************************
 
-Route::prefix('visits')->middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
+Route::prefix('visits')->middleware(['auth:api', 'role:Admin|Docente|Estudiante|Encargado de Practicas|Coordinador'])->group(function () {
     Route::get('/', [VisitController::class, 'index']);
     Route::get('/{id}', [VisitController::class, 'show']);
-    // Solo Admin puede registrar, editar y eliminar visitas
-    Route::middleware('role:Admin')->group(function () {
+    // Docente registra y edita sus visitas
+    Route::middleware('role:Admin|Docente')->group(function () {
         Route::post('/', [VisitController::class, 'store']);
         Route::put('/{id}', [VisitController::class, 'update']);
         Route::delete('/{id}', [VisitController::class, 'destroy']);

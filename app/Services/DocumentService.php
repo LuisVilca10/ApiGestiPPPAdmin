@@ -11,7 +11,7 @@ class DocumentService
     /**
      * Almacena un archivo subido y crea el registro en la base de datos.
      */
-    public function upload(string $practiceId, string $documentType, UploadedFile $file): Document
+    public function upload(string $practiceId, string $documentType, UploadedFile $file, ?int $visitId = null): Document
     {
         $username      = Auth::user()->code;
         $extension     = $file->getClientOriginalExtension();
@@ -27,6 +27,7 @@ class DocumentService
             'document_name'   => $archivoNombre,
             'document_path'   => $path,
             'document_status' => $status,
+            'visit_id'        => $visitId,
         ]);
     }
 }

@@ -15,6 +15,7 @@ class StoreDocumentRequest extends ApiFormRequest
             'practice_id'   => 'required|exists:practices,id',
             'document_type' => "required|string|in:{$types}",
             'file'          => 'required|file|mimes:pdf,doc,docx,ppt,pptx|max:30720',
+            'visit_id'      => 'nullable|exists:visits,id',
         ];
     }
 
