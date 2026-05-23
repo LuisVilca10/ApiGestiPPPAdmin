@@ -27,6 +27,7 @@ class PracticeService
             'practica'      => $practice,
             'fecha_emision' => now()->locale('es')->isoFormat('DD [de] MMMM [de] YYYY'),
             'numero_carta'  => "CARTA N° {$numeroFormato}-{$year} / AD-FCE-UPeU-CJ",
+            'anno_lema'     => config('app.anno_lema'),
         ];
 
         $pdf      = Pdf::loadView('pdfs.carta_presentacion', $data);

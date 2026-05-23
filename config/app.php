@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'anno_lema' => env('ANNO_LEMA', 'Año de la Esperanza y el Fortalecimiento de la Democracia'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

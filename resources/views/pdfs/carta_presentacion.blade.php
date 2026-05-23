@@ -114,7 +114,7 @@
     </div>
 
     <div class="subtitle">
-        "Año de la Esperanza y el Fortalecimiento de la Democracia"
+        "{{ $anno_lema }}"
     </div>
 
     <div class="ref">
