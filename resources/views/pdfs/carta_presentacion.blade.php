@@ -12,7 +12,6 @@
             margin: 0.5cm 1cm;
         }
 
-        /* Encabezado */
         .header {
             display: flex;
             align-items: center;
@@ -26,13 +25,6 @@
             height: 75px;
         }
 
-        .header-right {
-            text-align: right;
-            font-size: 10pt;
-            line-height: 1.2;
-        }
-
-        /* Subtítulo institucional */
         .subtitle {
             text-align: center;
             font-size: 10pt;
@@ -41,26 +33,22 @@
             margin-bottom: 25px;
         }
 
-        /* Fecha y referencia */
         .ref {
             text-align: right;
             font-size: 11pt;
             margin-bottom: 25px;
         }
 
-        /* Número de carta */
         .carta-num {
             font-weight: bold;
-            margin-bottom:  5px;
+            margin-bottom: 5px;
         }
 
-        /* Destinatario */
         .recipient {
             margin-bottom: 25px;
             line-height: 1.3;
         }
 
-        /* Cuerpo del texto */
         .body-text {
             text-align: justify;
             line-height: 1.5;
@@ -71,12 +59,10 @@
             margin-bottom: 15px;
         }
 
-        /* Despedida */
         .farewell {
             margin-bottom: 20px;
         }
 
-        /* Firma */
         .signature {
             text-align: start;
             margin-top: 40px;
@@ -91,7 +77,6 @@
             font-size: 11pt;
         }
 
-        /* Footer */
         .footer {
             position: fixed;
             bottom: 0.1cm;
@@ -103,20 +88,6 @@
             border-top: 1px solid #ccc;
             padding-top: 4px;
         }
-
-        /* Sello recibido */
-        .stamp {
-            position: absolute;
-            right: 2.5cm;
-            bottom: 5cm;
-            width: 140px;
-            height: 70px;
-            border: 2px solid #0033cc;
-            text-align: center;
-            font-size: 9pt;
-            opacity: 0.7;
-            transform: rotate(1deg);
-        }
     </style>
 </head>
 
@@ -127,7 +98,7 @@
     </div>
 
     <div class="subtitle">
-        “Año de la recuperación y consolidación de la economía peruana”
+        "Año de la recuperación y consolidación de la economía peruana"
     </div>
 
     <div class="ref">
@@ -139,8 +110,8 @@
     </div>
 
     <div class="recipient">
-        <p>Mg. Amed Vargas Martínez</p>
-        <p>Director de la EP Administración</p>
+        <p>{{ $destinatario_nombre }}</p>
+        <p>{{ $destinatario_titulo }}</p>
         <p>Presente.-</p>
     </div>
 
@@ -149,9 +120,28 @@
     <div class="body-text">
         <p>Reciba un cordial saludo a nombre de la Escuela Profesional de Administración y los mejores deseos de bendición de lo Alto a usted y familia.</p>
 
-        <p>Es grato presentar al(a) estudiante <strong>{{ $estudiante->name }} {{ $estudiante->last_name }}</strong>, identificado(a) con código universitario N° <strong>{{ $estudiante->code }}</strong>, estudiante del Programa de la Escuela Profesional de <strong>Administración</strong>, quien desea realizar Prácticas Preprofesionales en la empresa <strong>{{ $empresa->name_empresa }}</strong>, bajo la supervisión de <strong>{{ $empresa->trate_represent }} {{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</strong>.</p>
+        <p>
+            Es grato presentar {{ $estudiante->trato ? $estudiante->trato . ' ' : 'al(a) ' }}estudiante
+            <strong>{{ $estudiante->name }} {{ $estudiante->last_name }}</strong>,
+            identificado(a) con DNI N° <strong>{{ $estudiante->dni ?? '____________' }}</strong>
+            y código universitario N° <strong>{{ $estudiante->code }}</strong>,
+            cursando el <strong>{{ $estudiante->academic_cycle }}</strong> ciclo
+            de la Escuela Profesional de <strong>{{ $estudiante->career ?? 'Administración' }}</strong>,
+            quien desea realizar Prácticas Preprofesionales en la empresa
+            <strong>{{ $empresa->name_empresa }}</strong>,
+            bajo la supervisión de
+            <strong>{{ $empresa->trate_represent ? $empresa->trate_represent . ' ' : '' }}{{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</strong>.
+        </p>
 
-        <p>El estudiante realizará actividades de <strong>{{ $practica->activity_student }}</strong> con una duración total de <strong>{{ $practica->hourse_practice }}</strong> horas. Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela, logrando así los objetivos necesarios en la formación del futuro administrador.</p>
+        <p>
+            El(la) estudiante realizará actividades de <strong>{{ $practica->activity_student }}</strong>
+            con una duración total de <strong>{{ $practica->hourse_practice }} horas</strong>
+            @if ($fecha_inicio && $fecha_fin)
+                , comprendidas desde el <strong>{{ $fecha_inicio }}</strong> hasta el <strong>{{ $fecha_fin }}</strong>
+            @endif
+            . Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela,
+            logrando así los objetivos necesarios en la formación del futuro administrador.
+        </p>
 
         <p>Agradeciendo de antemano el apoyo brindado, me despido.</p>
     </div>
@@ -168,7 +158,7 @@
 
     <div class="footer">
         <p>Carretera Salida a Arequipa Km. 6 Chullunquiani, Autop. Héroes de la Guerra del Pacífico, Juliaca – Puno – Perú</p>
-        <p>Web: <a href="https://www.upeu.edu.pe/">www.upeu.edu.pe</a> | Teléfono: (01) 6186902</p>
+        <p>Web: www.upeu.edu.pe | Teléfono: (01) 6186902</p>
     </div>
 
 </body>

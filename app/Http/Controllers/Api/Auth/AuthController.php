@@ -32,6 +32,10 @@ class AuthController
             'last_name'            => $user->last_name,
             'code'                 => $user->code,
             'username'             => $user->username,
+            'dni'                  => $user->dni,
+            'phone'                => $user->phone,
+            'trato'                => $user->trato,
+            'career'               => $user->career,
             'email'                => $user->email,
             'photo_url'            => $user->photo_url,
             'academic_cycle'       => $user->academic_cycle,
@@ -169,12 +173,17 @@ class AuthController
 
             $updateData = [];
 
-            if ($request->filled('name'))       $updateData['name']       = $request->name;
-            if ($request->filled('last_name'))  $updateData['last_name']  = $request->last_name;
-            if ($request->has('code'))          $updateData['code']        = $request->code;
-            if ($request->filled('username'))   $updateData['username']   = $request->username;
-            if ($request->filled('email'))      $updateData['email']      = $request->email;
-            if ($request->has('photo_url'))     $updateData['photo_url']  = $request->photo_url;
+            if ($request->filled('name'))           $updateData['name']           = $request->name;
+            if ($request->filled('last_name'))      $updateData['last_name']      = $request->last_name;
+            if ($request->has('code'))              $updateData['code']           = $request->code;
+            if ($request->filled('username'))       $updateData['username']       = $request->username;
+            if ($request->filled('email'))          $updateData['email']          = $request->email;
+            if ($request->has('photo_url'))         $updateData['photo_url']      = $request->photo_url;
+            if ($request->has('dni'))               $updateData['dni']            = $request->dni;
+            if ($request->has('phone'))             $updateData['phone']          = $request->phone;
+            if ($request->has('trato'))             $updateData['trato']          = $request->trato;
+            if ($request->has('career'))            $updateData['career']         = $request->career;
+            if ($request->filled('academic_cycle')) $updateData['academic_cycle'] = $request->academic_cycle;
 
             if ($request->filled('new_password')) {
                 $updateData['password'] = bcrypt($request->new_password);

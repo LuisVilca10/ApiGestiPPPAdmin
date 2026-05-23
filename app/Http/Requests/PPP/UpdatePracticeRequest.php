@@ -17,6 +17,8 @@ class UpdatePracticeRequest extends ApiFormRequest
             'phone_represent'     => 'sometimes|string|max:20',
             'activity_student'    => 'sometimes|string|max:500',
             'hourse_practice'     => 'sometimes|integer|min:1',
+            'start_date'          => 'sometimes|date',
+            'end_date'            => 'sometimes|date|after:start_date',
         ];
     }
 

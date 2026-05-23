@@ -23,6 +23,8 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('docente_id')->nullable();
             $table->foreign('docente_id')->references('id')->on('users')->onDelete('set null');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->index(['user_id', 'status'], 'idx_practices_user_status');

@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('code')->nullable();
             $table->string('username');
+            $table->string('dni')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('trato')->nullable();          // Sr. / Srta. / Mg. etc.
+            $table->string('career')->nullable();         // Ej: Administración
             $table->string('academic_cycle')->default('I');
             $table->unsignedInteger('hours_of_practice')->default(0);
             $table->string('email')->unique();

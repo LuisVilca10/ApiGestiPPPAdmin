@@ -282,13 +282,16 @@ class PracticeController
 
     public function show($id)
     {
-        $practice = Practice::with('empresa', 'user:id,name,last_name,code')->find($id);
+        $practice = Practice::with('empresa', 'user:id,name,last_name,code,trato,career,dni,phone,academic_cycle')->find($id);
 
         if (!$practice) {
             return $this->errorResponse('Práctica no encontrada', 404);
         }
 
-        return $this->successResponse($practice->toArray());
+        $data                       = $practice->toArray();
+        $data['sugerencia_visitas'] = $this->practiceService->sugerirFechasVisitas($practice);
+
+        return $this->successResponse($data);
     }
 
     public function store(StorePracticeRequest $request)
@@ -321,6 +324,8 @@ class PracticeController
             'empresa_id'       => $empresa->id,
             'activity_student' => $validated['activity_student'],
             'hourse_practice'  => $validated['hourse_practice'],
+            'start_date'       => $validated['start_date'],
+            'end_date'         => $validated['end_date'],
             'user_id'          => Auth::id(),
             'status'           => 'Pendiente',
         ]);
@@ -536,7 +541,7 @@ class PracticeController
             $practice->empresa_id = $empresa->id;
         }
 
-        $practiceFields = array_intersect_key($validated, array_flip(['activity_student', 'hourse_practice']));
+        $practiceFields = array_intersect_key($validated, array_flip(['activity_student', 'hourse_practice', 'start_date', 'end_date']));
         if (!empty($practiceFields)) {
             $practice->fill($practiceFields);
         }

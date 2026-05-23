@@ -21,6 +21,8 @@ class Practice extends Model
         'rejection_reason',
         'user_id',
         'docente_id',
+        'start_date',
+        'end_date',
     ];
 
     protected $appends = ['periodo'];
