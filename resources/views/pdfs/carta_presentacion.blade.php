@@ -98,7 +98,7 @@
     </div>
 
     <div class="subtitle">
-        "Año de la recuperación y consolidación de la economía peruana"
+        "Año de la Esperanza y el Fortalecimiento de la Democracia"
     </div>
 
     <div class="ref">
@@ -122,15 +122,15 @@
         <p>Reciba un cordial saludo a nombre de la Escuela Profesional de Administración y los mejores deseos de bendición de lo Alto a usted y familia.</p>
 
         <p>
-            Es grato presentar al(a) estudiante
+            Es grato presentar al/a (la) estudiante
             <strong>{{ $estudiante->name }} {{ $estudiante->last_name }}</strong>,
-            identificado(a) con código universitario N° <strong>{{ $estudiante->code }}</strong>,
-            cursando el <strong>{{ $estudiante->academic_cycle }}</strong> ciclo
+            identificado(a) con código universitario <strong> N° {{ $estudiante->code }}</strong>,
+            estudiante del <strong>{{ $estudiante->academic_cycle }}</strong> ciclo
             de la Escuela Profesional de <strong>{{ $estudiante->career ?? 'Administración' }}</strong>,
-            quien desea realizar Prácticas Preprofesionales en su empresa.
+            quien desea realizar Prácticas Pre profesionales en la entidad asu cargo, por eso nos acercamos
+            a su desapacho y solicitamos que pueda ser admitido(a), y de esa manera pueda
+            cumplir con los requisitos exigidos por la escuela, logrando los objetivos necesarios en la formación del futuro administrador.
         </p>
-
-        <p>Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela, logrando así los objetivos necesarios en la formación del futuro administrador.</p>
 
         <p>Agradeciendo de antemano el apoyo brindado, me despido.</p>
     </div>
@@ -147,7 +147,7 @@
 
     <div class="footer">
         <p>Carretera Salida a Arequipa Km. 6 Chullunquiani, Autop. Héroes de la Guerra del Pacífico, Juliaca – Puno – Perú</p>
-        <p>Web: www.upeu.edu.pe | Teléfono: (01) 6186902</p>
+        <p>Web: https://www.upeu.edu.pe | Teléfono: (01) 6186902</p>
     </div>
 
 </body>

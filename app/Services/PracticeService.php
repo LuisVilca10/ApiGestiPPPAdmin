@@ -19,7 +19,7 @@ class PracticeService
             'estudiante'    => $estudiante,
             'empresa'       => $practice->empresa,
             'practica'      => $practice,
-            'fecha_emision' => now()->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'fecha_emision' => now()->locale('es')->isoFormat('DD [de] MMMM [de] YYYY'),
             'numero_carta'  => "CARTA N° {$practice->id}-{$year}/EP.ADM-FCA-UPEU-CJ",
         ];
 
