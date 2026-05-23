@@ -106,6 +106,16 @@ class PracticeController
 
     public function documentsByPractice(Request $request, $practiceId)
     {
+        $practice = Practice::find($practiceId);
+
+        if (!$practice) {
+            return $this->errorResponse('Práctica no encontrada', 404);
+        }
+
+        if (!$this->canAccessPractice($practice)) {
+            return $this->errorResponse('No tienes acceso a esta práctica', 403);
+        }
+
         $size         = $request->input('size', 10);
         $frontendPage = $request->input('page', 0);
         $search       = $request->input('search');
@@ -288,6 +298,10 @@ class PracticeController
             return $this->errorResponse('Práctica no encontrada', 404);
         }
 
+        if (!$this->canAccessPractice($practice)) {
+            return $this->errorResponse('No tienes acceso a esta práctica', 403);
+        }
+
         $docs = $practice->documents->groupBy('document_type');
 
         // Estado de cada visita
@@ -415,10 +429,14 @@ class PracticeController
 
     public function show($id)
     {
-        $practice = Practice::with('empresa', 'user:id,name,last_name,code,trato,career,dni,phone,academic_cycle')->find($id);
+        $practice = Practice::with('empresa', 'user:id,name,last_name,code,career,dni,phone,academic_cycle')->find($id);
 
         if (!$practice) {
             return $this->errorResponse('Práctica no encontrada', 404);
+        }
+
+        if (!$this->canAccessPractice($practice)) {
+            return $this->errorResponse('No tienes acceso a esta práctica', 403);
         }
 
         $data                       = $practice->toArray();
@@ -726,5 +744,27 @@ class PracticeController
         $practice->delete();
 
         return $this->successResponse([], 'Práctica eliminada correctamente');
+    }
+
+    /**
+     * Verifica que el usuario autenticado tenga acceso a la práctica.
+     * - Admin / Encargado / Coordinador: acceso total
+     * - Docente: solo las prácticas donde es el docente asignado
+     * - Estudiante: solo sus propias prácticas
+     */
+    private function canAccessPractice(Practice $practice): bool
+    {
+        $user = Auth::user();
+
+        if ($user->hasAnyRole(['Admin', 'Encargado de Practicas', 'Coordinador'])) {
+            return true;
+        }
+
+        if ($user->hasRole('Docente')) {
+            return (int) $practice->docente_id === $user->id;
+        }
+
+        // Estudiante
+        return (int) $practice->user_id === $user->id;
     }
 }
