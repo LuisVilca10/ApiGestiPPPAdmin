@@ -12,15 +12,21 @@ class PracticeService
 {
     public function generateCartaPresentacion(Practice $practice): array
     {
-        $estudiante = $practice->user;
-        $year       = now()->year;
+        $estudiante  = $practice->user;
+        $year        = now()->year;
+
+        // Correlativo anual: cuenta cartas emitidas este año y suma 1
+        $correlativo    = Document::where('document_type', 'Carta Presentacion')
+            ->whereYear('created_at', $year)
+            ->count() + 1;
+        $numeroFormato  = str_pad($correlativo, 3, '0', STR_PAD_LEFT);
 
         $data = [
             'estudiante'    => $estudiante,
             'empresa'       => $practice->empresa,
             'practica'      => $practice,
             'fecha_emision' => now()->locale('es')->isoFormat('DD [de] MMMM [de] YYYY'),
-            'numero_carta'  => "CARTA N° {$practice->id}-{$year}/EP.ADM-FCA-UPEU-CJ",
+            'numero_carta'  => "CARTA N° {$numeroFormato}-{$year} / AD-FCE-UPeU-CJ",
         ];
 
         $pdf      = Pdf::loadView('pdfs.carta_presentacion', $data);
