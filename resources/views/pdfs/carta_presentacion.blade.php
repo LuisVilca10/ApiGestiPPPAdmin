@@ -95,10 +95,10 @@
 
         .watermark {
             position: fixed;
-            top: 30%;
-            left: 15%;
-            width: 70%;
-            opacity: 0.07;
+            top: 28%;
+            left: 20%;
+            width: 60%;
+            opacity: 0.08;
             z-index: -1000;
         }
     </style>
@@ -106,8 +106,8 @@
 
 <body>
 
-    {{-- Marca de agua centrada en la página --}}
-    <img class="watermark" src="{{ public_path('images/logoupeu.png') }}" alt="">
+    {{-- Marca de agua centrada en el contenido --}}
+    <img class="watermark" src="{{ public_path('images/marcaaguaupeu.png') }}" alt="">
 
     <div class="header">
         <img src="{{ public_path('images/logoupeu.png') }}" alt="Logo UPeU">
