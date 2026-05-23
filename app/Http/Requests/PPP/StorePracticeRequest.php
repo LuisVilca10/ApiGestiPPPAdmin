@@ -18,7 +18,7 @@ class StorePracticeRequest extends ApiFormRequest
             'phone_represent'     => 'required|string|max:20',
             'activity_student'    => 'required|string|max:500',
             'hourse_practice'     => 'required|integer|min:1',
-            'start_date'          => 'required|date',
+            'start_date'          => 'required|date|after_or_equal:today',
             'end_date'            => 'required|date|after:start_date',
         ];
     }
@@ -45,9 +45,10 @@ class StorePracticeRequest extends ApiFormRequest
     public function messages(): array
     {
         return [
-            'ruc.regex'          => 'El RUC debe tener 11 dígitos y comenzar con 10 (persona natural) o 20 (persona jurídica).',
-            'ruc.size'           => 'El RUC debe tener exactamente 11 dígitos.',
-            'end_date.after'     => 'La fecha de fin debe ser posterior a la fecha de inicio.',
+            'ruc.regex'                  => 'El RUC debe tener 11 dígitos y comenzar con 10 (persona natural) o 20 (persona jurídica).',
+            'ruc.size'                   => 'El RUC debe tener exactamente 11 dígitos.',
+            'start_date.after_or_equal'  => 'La fecha de inicio no puede ser una fecha pasada.',
+            'end_date.after'             => 'La fecha de fin debe ser posterior a la fecha de inicio.',
         ];
     }
 }
