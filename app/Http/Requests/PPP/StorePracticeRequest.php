@@ -15,6 +15,7 @@ class StorePracticeRequest extends ApiFormRequest
             'name_represent'      => 'required|string|max:255',
             'lastname_represent'  => 'required|string|max:255',
             'trate_represent'     => 'nullable|string|max:50',
+            'cargo_represent'     => 'nullable|string|max:150',
             'phone_represent'     => 'required|string|max:20',
             'activity_student'    => 'required|string|max:500',
             'hourse_practice'     => 'required|integer|min:1',

@@ -316,6 +316,7 @@ class PracticeController
                 'name_represent'     => $validated['name_represent'],
                 'lastname_represent' => $validated['lastname_represent'],
                 'trate_represent'    => $validated['trate_represent'] ?? null,
+                'cargo_represent'    => $validated['cargo_represent'] ?? null,
                 'phone_represent'    => $validated['phone_represent'],
             ]
         );

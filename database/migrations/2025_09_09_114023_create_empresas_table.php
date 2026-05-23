@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('name_represent');
             $table->string('lastname_represent');
             $table->string('trate_represent')->nullable();
+            $table->string('cargo_represent')->nullable();
             $table->string('phone_represent');
             $table->string('departamento')->nullable();
             $table->string('provincia')->nullable();

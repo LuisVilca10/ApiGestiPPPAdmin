@@ -107,7 +107,7 @@
 <body>
 
     {{-- Marca de agua centrada en el contenido --}}
-    <img class="watermark" src="{{ public_path('images/marcaaguaupeu.png') }}" alt="">
+    <img class="watermark" src="{{ public_path('images/logoupeu.png') }}" alt="">
 
     <div class="header">
         <img src="{{ public_path('images/logoupeu.png') }}" alt="Logo UPeU">
@@ -128,7 +128,9 @@
     {{-- Destinatario: representante de la empresa --}}
     <div class="recipient">
         <p>{{ $empresa->trate_represent ? $empresa->trate_represent . ' ' : '' }}{{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</p>
-        <p>{{ $empresa->name_empresa }}</p>
+        @if($empresa->cargo_represent)
+        <p>{{ $empresa->cargo_represent }}</p>
+        @endif
         <p>Presente.-</p>
     </div>
 

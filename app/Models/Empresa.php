@@ -15,6 +15,7 @@ class Empresa extends Model
         'name_represent',
         'lastname_represent',
         'trate_represent',
+        'cargo_represent',
         'phone_represent',
         'departamento',
         'provincia',
