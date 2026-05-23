@@ -562,6 +562,12 @@ class PracticeController
             'docente_id' => 'required|exists:users,id',
         ]);
 
+        $docente = \App\Models\User::find($request->docente_id);
+
+        if (!$docente->hasRole('Docente')) {
+            return $this->errorResponse('El usuario seleccionado no tiene rol de Docente', 422);
+        }
+
         $practice->update(['docente_id' => $request->docente_id]);
 
         return $this->successResponse(

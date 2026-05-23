@@ -19,7 +19,13 @@ class UserController
         $frontendPage = $request->input('page', 0);
         $search       = $request->input('search');
 
+        $role = $request->input('role');
+
         $query = User::with('roles');
+
+        if ($role) {
+            $query->whereHas('roles', fn($q) => $q->where('name', $role));
+        }
 
         if ($search) {
             $query->where(function ($q) use ($search) {
