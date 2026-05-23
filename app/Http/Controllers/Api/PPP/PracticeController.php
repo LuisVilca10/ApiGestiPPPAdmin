@@ -348,28 +348,45 @@ class PracticeController
         $fichasAprobadas = ($docs->get('Ficha Visita') ?? collect())
             ->where('document_status', 'Aprobado')->count();
 
+        // Helper: ¿un tipo de documento tiene al menos un doc Aprobado?
+        $aprobado = fn(string $tipo) => ($docs->get($tipo) ?? collect())
+            ->contains('document_status', 'Aprobado');
+
         $resultado = [];
         foreach ($pasos as $paso) {
             $tipo        = $paso['documento'];
-                $docsDelTipo = $docs->get($tipo) ?? collect();
+            $docsDelTipo = $docs->get($tipo) ?? collect();
+
+            // Calcular si el paso está disponible para actuar ahora
+            $disponible = match ($tipo) {
+                'Carta Presentacion'  => false, // siempre lo genera el sistema
+                'Carta Aceptacion'    => $aprobado('Carta Presentacion'),
+                'Plan de Practicas'   => $aprobado('Carta Aceptacion'),
+                'Ficha Visita'        => $aprobado('Plan de Practicas'),
+                'Informe Jefe Empresa'=> $aprobado('Plan de Practicas'),
+                'Informe de Practicas'=> $fichasAprobadas >= 3 && $aprobado('Informe Jefe Empresa'),
+                'Constancia de Practica' => $aprobado('Informe de Practicas'),
+                default               => false,
+            };
 
             if ($tipo === 'Ficha Visita') {
                 $detalle = collect(['Inicio', 'Medio', 'Final'])->map(function ($subtipo) use ($visitasPorTipo, $docs) {
-                    $visita   = $visitasPorTipo->get($subtipo);
-                    $ficha    = ($docs->get('Ficha Visita') ?? collect())
+                    $visita = $visitasPorTipo->get($subtipo);
+                    $ficha  = ($docs->get('Ficha Visita') ?? collect())
                         ->firstWhere(fn($d) => $visita && $d->visit_id === $visita->id);
 
                     return [
-                        'subtipo'        => $subtipo,
-                        'visita_id'      => $visita?->id,
-                        'visita_fecha'   => $visita?->visit_date,
-                        'visita_estado'  => $visita?->visit_status ?? 'Sin programar',
-                        'ficha_estado'   => $ficha?->document_status ?? 'Pendiente',
-                        'ficha_id'       => $ficha?->id,
+                        'subtipo'       => $subtipo,
+                        'visita_id'     => $visita?->id,
+                        'visita_fecha'  => $visita?->visit_date,
+                        'visita_estado' => $visita?->visit_status ?? 'Sin programar',
+                        'ficha_estado'  => $ficha?->document_status ?? 'Pendiente',
+                        'ficha_id'      => $ficha?->id,
                     ];
                 });
 
                 $resultado[] = array_merge($paso, [
+                    'disponible'      => $disponible,
                     'estado'          => $fichasAprobadas >= 3 ? 'Completo' : ($fichasAprobadas > 0 ? 'En progreso' : 'Pendiente'),
                     'fichas_aprobadas'=> $fichasAprobadas,
                     'detalle_visitas' => $detalle,
@@ -380,6 +397,7 @@ class PracticeController
             $ultimo = $docsDelTipo->sortByDesc('created_at')->first();
 
             $resultado[] = array_merge($paso, [
+                'disponible'   => $disponible,
                 'estado'       => $ultimo?->document_status ?? 'Pendiente',
                 'documento_id' => $ultimo?->id,
                 'subido_en'    => $ultimo?->created_at,
