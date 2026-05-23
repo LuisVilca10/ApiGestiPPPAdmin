@@ -8,54 +8,103 @@ use Illuminate\Support\Facades\Hash;
 
 class UserAdminSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Crear usuario ADMIN
+        // ── Admin ────────────────────────────────────────────────────────────
         $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
-                'name'               => 'Administrador',
-                'last_name'          => 'de Sistema',
-                'code'               => '202420111',
-                'photo_url'          => 'ADM001.jpg',
-                'username'           => 'luis.admin',
-                'password'           => Hash::make('admin123'),
-                'academic_cycle'     => 'I',
-                'hours_of_practice'  => 0,
+                'name'              => 'Administrador',
+                'last_name'         => 'de Sistema',
+                'code'              => '202420111',
+                'username'          => 'luis.admin',
+                'password'          => Hash::make('admin123'),
+                'academic_cycle'    => 'I',
+                'career'            => 'Administración',
+                'hours_of_practice' => 0,
             ]
         );
-
         $admin->assignRole('Admin');
 
+        // ── Encargado de Prácticas ───────────────────────────────────────────
+        $encargado = User::firstOrCreate(
+            ['email' => 'encargado@example.com'],
+            [
+                'name'              => 'Encargado',
+                'last_name'         => 'de Prácticas',
+                'code'              => '202420112',
+                'username'          => 'encargado.ppp',
+                'password'          => Hash::make('12345678'),
+                'academic_cycle'    => 'I',
+                'career'            => 'Administración',
+                'hours_of_practice' => 0,
+            ]
+        );
+        $encargado->assignRole('Encargado de Practicas');
+
+        // ── Coordinador ──────────────────────────────────────────────────────
+        $coordinador = User::firstOrCreate(
+            ['email' => 'coordinador@example.com'],
+            [
+                'name'              => 'Coordinador',
+                'last_name'         => 'EP Administración',
+                'code'              => '202420113',
+                'username'          => 'coordinador.ep',
+                'password'          => Hash::make('12345678'),
+                'academic_cycle'    => 'I',
+                'career'            => 'Administración',
+                'hours_of_practice' => 0,
+            ]
+        );
+        $coordinador->assignRole('Coordinador');
+
+        // ── Docente ──────────────────────────────────────────────────────────
+        $docente = User::firstOrCreate(
+            ['email' => 'docente@example.com'],
+            [
+                'name'              => 'Amed',
+                'last_name'         => 'Vargas Martínez',
+                'code'              => '202420114',
+                'username'          => 'amed.vargas',
+                'password'          => Hash::make('12345678'),
+                'academic_cycle'    => 'I',
+                'career'            => 'Administración',
+                'hours_of_practice' => 0,
+            ]
+        );
+        $docente->assignRole('Docente');
+
+        // ── Estudiante principal (Alessandro) ────────────────────────────────
         $alex = User::firstOrCreate(
             ['email' => 'alex.mmm@example.com'],
             [
-                'name'               => 'Alessandro Pastor',
-                'last_name'          => 'Mamani Mamani',
-                'code'               => '202129932',
-                'photo_url'          => 'USR001.jpg',
-                'username'           => 'alex.mmm',
-                'password'           => Hash::make('12345678'),
-                'academic_cycle'     => 'VI',
-                'hours_of_practice'  => 0,
+                'name'              => 'Alessandro Pastor',
+                'last_name'         => 'Mamani Mamani',
+                'code'              => '202129932',
+                'username'          => 'alex.mmm',
+                'password'          => Hash::make('12345678'),
+                'academic_cycle'    => 'VI',
+                'dni'               => '74512345',
+                'phone'             => '987654321',
+                'career'            => 'Administración',
+                'hours_of_practice' => 0,
             ]
         );
-
         $alex->assignRole('Estudiante');
 
+        // ── Estudiantes de ejemplo ───────────────────────────────────────────
         $students = [
             [
                 'email'                => 'tammya.suaña@example.com',
                 'name'                 => 'Tammya Maricielo',
                 'last_name'            => 'Suaña Ortega',
                 'code'                 => '202130001',
-                'username'             => 'tammya.suaña',
-                'photo_url'            => 'USR002.jpg',
+                'username'             => 'tammya.su',
                 'password'             => Hash::make('12345678'),
                 'academic_cycle'       => 'VI',
+                'dni'                  => '74500001',
+                'phone'                => '987000001',
+                'career'               => 'Administración',
                 'hours_of_practice'    => 0,
                 'must_change_password' => true,
             ],
@@ -65,9 +114,11 @@ class UserAdminSeeder extends Seeder
                 'last_name'            => 'Ríos Mendoza',
                 'code'                 => '202130002',
                 'username'             => 'carlos.rios',
-                'photo_url'            => 'USR003.jpg',
                 'password'             => Hash::make('12345678'),
                 'academic_cycle'       => 'VII',
+                'dni'                  => '74500002',
+                'phone'                => '987000002',
+                'career'               => 'Administración',
                 'hours_of_practice'    => 0,
                 'must_change_password' => true,
             ],
@@ -77,9 +128,11 @@ class UserAdminSeeder extends Seeder
                 'last_name'            => 'Flores Paredes',
                 'code'                 => '202130003',
                 'username'             => 'ana.flores',
-                'photo_url'            => 'USR004.jpg',
                 'password'             => Hash::make('12345678'),
                 'academic_cycle'       => 'VIII',
+                'dni'                  => '74500003',
+                'phone'                => '987000003',
+                'career'               => 'Administración',
                 'hours_of_practice'    => 0,
                 'must_change_password' => true,
             ],
@@ -89,9 +142,11 @@ class UserAdminSeeder extends Seeder
                 'last_name'            => 'Huanca Quispe',
                 'code'                 => '202130004',
                 'username'             => 'pedro.huanca',
-                'photo_url'            => 'USR005.jpg',
                 'password'             => Hash::make('12345678'),
                 'academic_cycle'       => 'VI',
+                'dni'                  => '74500004',
+                'phone'                => '987000004',
+                'career'               => 'Administración',
                 'hours_of_practice'    => 0,
                 'must_change_password' => true,
             ],
@@ -101,9 +156,11 @@ class UserAdminSeeder extends Seeder
                 'last_name'            => 'Mamani Condori',
                 'code'                 => '202130005',
                 'username'             => 'lucia.mamani',
-                'photo_url'            => 'USR006.jpg',
                 'password'             => Hash::make('12345678'),
                 'academic_cycle'       => 'IX',
+                'dni'                  => '74500005',
+                'phone'                => '987000005',
+                'career'               => 'Administración',
                 'hours_of_practice'    => 0,
                 'must_change_password' => true,
             ],

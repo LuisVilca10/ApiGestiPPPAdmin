@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->dateTime('visit_date');
             $table->enum('visit_type', ['Inicio', 'Medio', 'Final']);
-            $table->text('visit_notes');
-            $table->decimal('visit_result', 5, 2);
+            $table->text('visit_notes')->nullable();
+            $table->decimal('visit_result', 5, 2)->nullable();
             $table->enum('visit_status', ['Programada', 'Realizada', 'Cancelada'])->default('Programada');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

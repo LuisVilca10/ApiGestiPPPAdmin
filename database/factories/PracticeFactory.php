@@ -19,11 +19,16 @@ class PracticeFactory extends Factory
             'phone_represent'    => $this->faker->numerify('9########'),
         ]);
 
+        $start = $this->faker->dateTimeBetween('now', '+1 month');
+        $end   = $this->faker->dateTimeBetween('+3 months', '+6 months');
+
         return [
             'empresa_id'       => $empresa->id,
             'activity_student' => $this->faker->sentence(4),
             'hourse_practice'  => $this->faker->numberBetween(240, 480),
             'status'           => 'Pendiente',
+            'start_date'       => $start->format('Y-m-d'),
+            'end_date'         => $end->format('Y-m-d'),
             'user_id'          => User::whereHas('roles', fn($q) => $q->where('name', 'Estudiante'))
                                       ->inRandomOrder()->value('id') ?? 2,
         ];
