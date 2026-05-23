@@ -611,6 +611,31 @@ class PracticeController
             return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
         }
 
+        // Control de iteración: verificar estado del documento existente
+        // Fichas de Visita son la excepción — hay 3 por práctica (una por visita distinta)
+        if ($documentType !== 'Ficha Visita') {
+            $ultimoDoc = $practice->documents()
+                ->where('document_type', $documentType)
+                ->latest()
+                ->first();
+
+            if ($ultimoDoc) {
+                if ($ultimoDoc->document_status === 'Aprobado') {
+                    return $this->errorResponse(
+                        "El documento \"{$documentType}\" ya fue aprobado y no puede reemplazarse.",
+                        422
+                    );
+                }
+                if ($ultimoDoc->document_status === 'En Proceso') {
+                    return $this->errorResponse(
+                        "Ya tienes un \"{$documentType}\" en revisión. Espera la respuesta del Encargado antes de volver a subir.",
+                        422
+                    );
+                }
+                // Si está Rechazado: se permite re-subir (el viejo queda en historial)
+            }
+        }
+
         // Ficha Visita requiere visit_id obligatorio
         if ($documentType === 'Ficha Visita' && !$request->visit_id) {
             return $this->errorResponse('Debes indicar el visit_id para subir una Ficha de Visita.', 422);
