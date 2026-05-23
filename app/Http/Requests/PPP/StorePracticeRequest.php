@@ -31,7 +31,6 @@ class StorePracticeRequest extends ApiFormRequest
 
             if (empty($user->dni))    $missing[] = 'dni';
             if (empty($user->phone))  $missing[] = 'phone';
-            if (empty($user->trato))  $missing[] = 'trato';
             if (empty($user->career)) $missing[] = 'career';
 
             if (!empty($missing)) {

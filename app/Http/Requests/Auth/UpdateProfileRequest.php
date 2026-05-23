@@ -19,7 +19,6 @@ class UpdateProfileRequest extends ApiFormRequest
             'photo_url'     => 'sometimes|nullable|string|max:500',
             'dni'           => 'sometimes|nullable|string|max:20',
             'phone'         => 'sometimes|nullable|string|max:20',
-            'trato'         => 'sometimes|nullable|string|max:20',   // Sr. / Srta. / Br.
             'career'        => 'sometimes|nullable|string|max:255',
             'academic_cycle'=> 'sometimes|nullable|string|max:20',
         ];

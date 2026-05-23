@@ -30,7 +30,6 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'username',
         'dni',
         'phone',
-        'trato',
         'career',
         'email',
         'photo_url',

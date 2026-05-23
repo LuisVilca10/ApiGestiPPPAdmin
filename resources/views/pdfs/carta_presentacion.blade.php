@@ -46,7 +46,7 @@
 
         .recipient {
             margin-bottom: 25px;
-            line-height: 1.3;
+            line-height: 1.6;
         }
 
         .body-text {
@@ -109,9 +109,10 @@
         {{ $numero_carta }}
     </div>
 
+    {{-- Destinatario: representante de la empresa --}}
     <div class="recipient">
-        <p>{{ $destinatario_nombre }}</p>
-        <p>{{ $destinatario_titulo }}</p>
+        <p>{{ $empresa->trate_represent ? $empresa->trate_represent . ' ' : '' }}{{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</p>
+        <p>{{ $empresa->name_empresa }}</p>
         <p>Presente.-</p>
     </div>
 
@@ -121,27 +122,15 @@
         <p>Reciba un cordial saludo a nombre de la Escuela Profesional de Administración y los mejores deseos de bendición de lo Alto a usted y familia.</p>
 
         <p>
-            Es grato presentar {{ $estudiante->trato ? $estudiante->trato . ' ' : 'al(a) ' }}estudiante
+            Es grato presentar al(a) estudiante
             <strong>{{ $estudiante->name }} {{ $estudiante->last_name }}</strong>,
-            identificado(a) con DNI N° <strong>{{ $estudiante->dni ?? '____________' }}</strong>
-            y código universitario N° <strong>{{ $estudiante->code }}</strong>,
+            identificado(a) con código universitario N° <strong>{{ $estudiante->code }}</strong>,
             cursando el <strong>{{ $estudiante->academic_cycle }}</strong> ciclo
             de la Escuela Profesional de <strong>{{ $estudiante->career ?? 'Administración' }}</strong>,
-            quien desea realizar Prácticas Preprofesionales en la empresa
-            <strong>{{ $empresa->name_empresa }}</strong>,
-            bajo la supervisión de
-            <strong>{{ $empresa->trate_represent ? $empresa->trate_represent . ' ' : '' }}{{ $empresa->name_represent }} {{ $empresa->lastname_represent }}</strong>.
+            quien desea realizar Prácticas Preprofesionales en su empresa.
         </p>
 
-        <p>
-            El(la) estudiante realizará actividades de <strong>{{ $practica->activity_student }}</strong>
-            con una duración total de <strong>{{ $practica->hourse_practice }} horas</strong>
-            @if ($fecha_inicio && $fecha_fin)
-                , comprendidas desde el <strong>{{ $fecha_inicio }}</strong> hasta el <strong>{{ $fecha_fin }}</strong>
-            @endif
-            . Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela,
-            logrando así los objetivos necesarios en la formación del futuro administrador.
-        </p>
+        <p>Solicitamos que pueda ser admitido(a) para cumplir con los requisitos exigidos por la escuela, logrando así los objetivos necesarios en la formación del futuro administrador.</p>
 
         <p>Agradeciendo de antemano el apoyo brindado, me despido.</p>
     </div>

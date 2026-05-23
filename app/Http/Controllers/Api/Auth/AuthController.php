@@ -34,7 +34,6 @@ class AuthController
             'username'             => $user->username,
             'dni'                  => $user->dni,
             'phone'                => $user->phone,
-            'trato'                => $user->trato,
             'career'               => $user->career,
             'email'                => $user->email,
             'photo_url'            => $user->photo_url,
@@ -181,7 +180,6 @@ class AuthController
             if ($request->has('photo_url'))         $updateData['photo_url']      = $request->photo_url;
             if ($request->has('dni'))               $updateData['dni']            = $request->dni;
             if ($request->has('phone'))             $updateData['phone']          = $request->phone;
-            if ($request->has('trato'))             $updateData['trato']          = $request->trato;
             if ($request->has('career'))            $updateData['career']         = $request->career;
             if ($request->filled('academic_cycle')) $updateData['academic_cycle'] = $request->academic_cycle;
 

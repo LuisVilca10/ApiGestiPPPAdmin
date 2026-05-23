@@ -16,19 +16,11 @@ class PracticeService
         $year       = now()->year;
 
         $data = [
-            'estudiante'          => $estudiante,
-            'empresa'             => $practice->empresa,
-            'practica'            => $practice,
-            'fecha_emision'       => now()->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
-            'destinatario_nombre' => 'Mg. Amed Vargas Martínez',
-            'destinatario_titulo' => 'Director de la EP Administración',
-            'numero_carta'        => "CARTA N° {$practice->id}-{$year}/EP.ADM-FCA-UPEU-CJ",
-            'fecha_inicio'        => $practice->start_date
-                ? Carbon::parse($practice->start_date)->locale('es')->isoFormat('D [de] MMMM [de] YYYY')
-                : null,
-            'fecha_fin'           => $practice->end_date
-                ? Carbon::parse($practice->end_date)->locale('es')->isoFormat('D [de] MMMM [de] YYYY')
-                : null,
+            'estudiante'    => $estudiante,
+            'empresa'       => $practice->empresa,
+            'practica'      => $practice,
+            'fecha_emision' => now()->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'numero_carta'  => "CARTA N° {$practice->id}-{$year}/EP.ADM-FCA-UPEU-CJ",
         ];
 
         $pdf      = Pdf::loadView('pdfs.carta_presentacion', $data);
