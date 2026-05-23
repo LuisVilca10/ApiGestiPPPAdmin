@@ -88,10 +88,26 @@
             border-top: 1px solid #ccc;
             padding-top: 4px;
         }
+
+        .footer a, .footer .web {
+            color: #0099cc;
+        }
+
+        .watermark {
+            position: fixed;
+            top: 30%;
+            left: 15%;
+            width: 70%;
+            opacity: 0.07;
+            z-index: -1000;
+        }
     </style>
 </head>
 
 <body>
+
+    {{-- Marca de agua centrada en la página --}}
+    <img class="watermark" src="{{ public_path('images/logoupeu.png') }}" alt="">
 
     <div class="header">
         <img src="{{ public_path('images/logoupeu.png') }}" alt="Logo UPeU">
@@ -147,7 +163,7 @@
 
     <div class="footer">
         <p>Carretera Salida a Arequipa Km. 6 Chullunquiani, Autop. Héroes de la Guerra del Pacífico, Juliaca – Puno – Perú</p>
-        <p>Web: https://www.upeu.edu.pe | Teléfono: (01) 6186902</p>
+        <p>Web: <span class="web">www.upeu.edu.pe</span> | Teléfono: (01) 6186902</p>
     </div>
 
 </body>
