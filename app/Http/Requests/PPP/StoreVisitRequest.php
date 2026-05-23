@@ -14,14 +14,16 @@ class StoreVisitRequest extends ApiFormRequest
             'visit_type'   => 'required|string|in:Inicio,Medio,Final',
             'visit_notes'  => 'required|string',
             'visit_result' => 'required|numeric|min:0|max:20',
+            'visit_status' => 'required|string|in:Programada,Realizada,Cancelada',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'visit_type.in'     => 'El tipo de visita debe ser: Inicio, Medio o Final.',
-            'visit_result.max'  => 'La calificación no puede superar 20.',
+            'visit_type.in'      => 'El tipo de visita debe ser: Inicio, Medio o Final.',
+            'visit_status.in'    => 'El estado de visita debe ser: Programada, Realizada o Cancelada.',
+            'visit_result.max'   => 'La calificación no puede superar 20.',
             'practice_id.exists' => 'La práctica indicada no existe.',
         ];
     }

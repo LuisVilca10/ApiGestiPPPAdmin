@@ -13,14 +13,16 @@ class UpdateVisitRequest extends ApiFormRequest
             'visit_type'   => 'sometimes|string|in:Inicio,Medio,Final',
             'visit_notes'  => 'sometimes|string',
             'visit_result' => 'sometimes|numeric|min:0|max:20',
+            'visit_status' => 'sometimes|string|in:Programada,Realizada,Cancelada',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'visit_type.in'    => 'El tipo de visita debe ser: Inicio, Medio o Final.',
-            'visit_result.max' => 'La calificación no puede superar 20.',
+            'visit_type.in'   => 'El tipo de visita debe ser: Inicio, Medio o Final.',
+            'visit_status.in' => 'El estado de visita debe ser: Programada, Realizada o Cancelada.',
+            'visit_result.max'=> 'La calificación no puede superar 20.',
         ];
     }
 }

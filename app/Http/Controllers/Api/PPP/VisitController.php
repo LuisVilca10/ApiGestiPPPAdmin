@@ -18,19 +18,26 @@ class VisitController
         $size         = $request->input('size', 10);
         $frontendPage = $request->input('page', 0);
         $practiceId   = $request->input('practice_id');
-        $isAdmin      = Auth::user()->hasRole('Admin');
+        $user         = Auth::user();
 
         $query = Visit::with(['practice:id,empresa_id', 'practice.empresa:id,name_empresa', 'user:id,name,last_name,code']);
 
-        if (!$isAdmin) {
-            $query->where('user_id', Auth::id());
+        if ($user->hasAnyRole(['Admin', 'Encargado de Practicas', 'Coordinador'])) {
+            // Ve todas las visitas
+        } elseif ($user->hasRole('Docente')) {
+            // Solo ve las visitas que él registró
+            $query->where('user_id', $user->id);
+        } elseif ($user->hasRole('Estudiante')) {
+            // Solo ve las visitas de sus propias prácticas
+            $query->whereHas('practice', fn($q) => $q->where('user_id', $user->id));
         }
 
         if ($practiceId) {
             $query->where('practice_id', $practiceId);
         }
 
-        $data = $query->paginate($size, ['*'], 'page', $frontendPage + 1);
+        $data = $query->orderBy('visit_date', 'desc')
+            ->paginate($size, ['*'], 'page', $frontendPage + 1);
 
         return $this->successResponse([
             'content'       => $data->items(),
