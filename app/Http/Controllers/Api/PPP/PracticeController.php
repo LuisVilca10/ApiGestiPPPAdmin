@@ -582,6 +582,11 @@ class PracticeController
             return $this->errorResponse('Práctica no encontrada', 404);
         }
 
+        // Estudiante solo puede subir a su propia práctica
+        if ($user->hasRole('Estudiante') && (int) $practice->user_id !== $user->id) {
+            return $this->errorResponse('No tienes acceso a esta práctica', 403);
+        }
+
         if ($practice->status !== 'Aprobado') {
             return $this->errorResponse('Solo se pueden subir documentos a prácticas aprobadas', 422);
         }

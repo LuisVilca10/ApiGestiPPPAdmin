@@ -50,10 +50,21 @@ class VisitController
 
     public function show($id)
     {
-        $visit = Visit::with(['practice:id,empresa_id', 'practice.empresa:id,name_empresa', 'user:id,name,last_name,code'])->find($id);
+        $visit = Visit::with(['practice:id,empresa_id,user_id,docente_id', 'practice.empresa:id,name_empresa', 'user:id,name,last_name,code'])->find($id);
 
         if (!$visit) {
             return $this->errorResponse('Visita no encontrada', 404);
+        }
+
+        $user = Auth::user();
+
+        if (!$user->hasAnyRole(['Admin', 'Encargado de Practicas', 'Coordinador'])) {
+            if ($user->hasRole('Docente') && (int) $visit->practice?->docente_id !== $user->id) {
+                return $this->errorResponse('No tienes acceso a esta visita', 403);
+            }
+            if ($user->hasRole('Estudiante') && (int) $visit->practice?->user_id !== $user->id) {
+                return $this->errorResponse('No tienes acceso a esta visita', 403);
+            }
         }
 
         return $this->successResponse($visit->toArray());

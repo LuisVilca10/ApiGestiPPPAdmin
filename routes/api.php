@@ -52,26 +52,30 @@ Route::middleware('auth:api')->group(function () {
 });
 
 
-//ruta protegida parent-module y module
-Route::middleware(['auth:api', 'role:Admin|Estudiante'])->group(function () {
-    // Rutas ParentModuleController
+// Módulos — lectura: todos los roles autenticados; escritura: solo Admin
+Route::middleware(['auth:api', 'role:Admin|Estudiante|Encargado de Practicas|Coordinador|Docente'])->group(function () {
     Route::prefix('parent-module')->group(function () {
-        Route::get('/', [ParentModuleController::class, 'listPaginate']);  // Listar con paginación
-        Route::get('/list', [ParentModuleController::class, 'list']);  // Listar sin paginación
-        Route::get('/list-detail-module-list', [ParentModuleController::class, 'listDetailModuleList']);  // Detalles de módulos
-        Route::post('/', [ParentModuleController::class, 'store']);  // Crear nuevo módulo padre
-        Route::get('/{id}', [ParentModuleController::class, 'show']);  // Mostrar módulo padre específico
-        Route::put('/{id}', [ParentModuleController::class, 'update']);  // Actualizar módulo padre
-        Route::delete('/{id}', [ParentModuleController::class, 'destroy']);  // Eliminar módulo padre
+        Route::get('/', [ParentModuleController::class, 'listPaginate']);
+        Route::get('/list', [ParentModuleController::class, 'list']);
+        Route::get('/list-detail-module-list', [ParentModuleController::class, 'listDetailModuleList']);
+        Route::get('/{id}', [ParentModuleController::class, 'show']);
     });
-
-    // Rutas ModuleController
     Route::prefix('module')->group(function () {
         Route::get('/', [ModuleController::class, 'index']);
         Route::get('/menu', [ModuleController::class, 'menu']);
         Route::get('/modules-selected/{roleId}/{parentModuleId}', [ModuleController::class, 'modulesSelected']);
-        Route::post('/', [ModuleController::class, 'store']);
         Route::get('/{id}', [ModuleController::class, 'show']);
+    });
+});
+
+Route::middleware(['auth:api', 'role:Admin'])->group(function () {
+    Route::prefix('parent-module')->group(function () {
+        Route::post('/', [ParentModuleController::class, 'store']);
+        Route::put('/{id}', [ParentModuleController::class, 'update']);
+        Route::delete('/{id}', [ParentModuleController::class, 'destroy']);
+    });
+    Route::prefix('module')->group(function () {
+        Route::post('/', [ModuleController::class, 'store']);
         Route::put('/{id}', [ModuleController::class, 'update']);
         Route::delete('/{id}', [ModuleController::class, 'destroy']);
     });
