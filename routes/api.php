@@ -131,10 +131,11 @@ Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante|Encarg
     Route::middleware('role:Admin|Estudiante')->post('/', [PracticeController::class, 'store']);
     // Estudiante y Docente suben documentos
     Route::middleware('role:Admin|Estudiante|Docente')->post('/upload-document', [PracticeController::class, 'storeDocumentPractice']);
-    // Encargado de Practicas aprueba o rechaza
+    // Encargado de Practicas aprueba, rechaza y asigna docente
     Route::middleware('role:Admin|Encargado de Practicas')->group(function () {
         Route::post('/{id}/aprobar', [PracticeController::class, 'approve']);
         Route::post('/{id}/rechazar', [PracticeController::class, 'reject']);
+        Route::post('/{id}/assign-docente', [PracticeController::class, 'assignDocente']);
     });
 });
 

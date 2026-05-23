@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\PPP;
 
 use App\Http\Requests\PPP\StoreVisitRequest;
 use App\Http\Requests\PPP\UpdateVisitRequest;
+use App\Models\Practice;
 use App\Models\Visit;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
@@ -25,8 +26,8 @@ class VisitController
         if ($user->hasAnyRole(['Admin', 'Encargado de Practicas', 'Coordinador'])) {
             // Ve todas las visitas
         } elseif ($user->hasRole('Docente')) {
-            // Solo ve las visitas que él registró
-            $query->where('user_id', $user->id);
+            // Solo ve visitas de las prácticas que le fueron asignadas
+            $query->whereHas('practice', fn($q) => $q->where('docente_id', $user->id));
         } elseif ($user->hasRole('Estudiante')) {
             // Solo ve las visitas de sus propias prácticas
             $query->whereHas('practice', fn($q) => $q->where('user_id', $user->id));
@@ -60,8 +61,15 @@ class VisitController
 
     public function store(StoreVisitRequest $request)
     {
+        $user     = Auth::user();
+        $practice = Practice::find($request->practice_id);
+
+        if ($user->hasRole('Docente') && (int) $practice->docente_id !== $user->id) {
+            return $this->errorResponse('No tienes asignada esta práctica para supervisión', 403);
+        }
+
         $data            = $request->validated();
-        $data['user_id'] = Auth::id();
+        $data['user_id'] = $user->id;
 
         $visit = Visit::create($data);
 

@@ -20,6 +20,7 @@ class Practice extends Model
         'status',
         'rejection_reason',
         'user_id',
+        'docente_id',
     ];
 
     protected $appends = ['periodo'];
@@ -146,6 +147,11 @@ class Practice extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function docente()
+    {
+        return $this->belongsTo(User::class, 'docente_id');
     }
     public function documents()
     {

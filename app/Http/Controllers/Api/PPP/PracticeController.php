@@ -434,6 +434,11 @@ class PracticeController
             return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
         }
 
+        // El Docente solo puede subir en prácticas que le fueron asignadas
+        if ($user->hasRole('Docente') && (int) $practice->docente_id !== $user->id) {
+            return $this->errorResponse('No tienes asignada esta práctica para supervisión', 403);
+        }
+
         // Solo Admin puede subir Sustentacion de Practicas
         if (in_array($documentType, Document::TIPOS_ADMIN) && !$user->hasRole('Admin')) {
             return $this->errorResponse('No tienes permiso para subir este tipo de documento', 403);
@@ -539,6 +544,30 @@ class PracticeController
         $practice->save();
 
         return $this->successResponse($practice->fresh()->load('empresa')->toArray(), 'Práctica actualizada correctamente');
+    }
+
+    public function assignDocente(Request $request, $id)
+    {
+        $practice = Practice::find($id);
+
+        if (!$practice) {
+            return $this->errorResponse('Práctica no encontrada', 404);
+        }
+
+        if ($practice->status !== 'Aprobado') {
+            return $this->errorResponse('Solo se puede asignar un docente a prácticas aprobadas', 422);
+        }
+
+        $request->validate([
+            'docente_id' => 'required|exists:users,id',
+        ]);
+
+        $practice->update(['docente_id' => $request->docente_id]);
+
+        return $this->successResponse(
+            $practice->fresh()->load(['docente:id,name,last_name,code'])->toArray(),
+            'Docente asignado correctamente'
+        );
     }
 
     public function destroy($id)
