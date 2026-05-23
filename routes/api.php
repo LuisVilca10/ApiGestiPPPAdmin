@@ -164,9 +164,10 @@ Route::get('/ruc/{ruc}', [RucController::class, 'lookup'])
 Route::prefix('visits')->middleware(['auth:api', 'role:Admin|Docente|Estudiante|Encargado de Practicas|Coordinador'])->group(function () {
     Route::get('/', [VisitController::class, 'index']);
     Route::get('/{id}', [VisitController::class, 'show']);
-    // Docente registra y edita sus visitas
+    // Encargado de Practicas programa las visitas (crea con estado Programada)
+    Route::middleware('role:Admin|Encargado de Practicas')->post('/', [VisitController::class, 'store']);
+    // Docente actualiza la visita (Realizada) y puede eliminarla
     Route::middleware('role:Admin|Docente')->group(function () {
-        Route::post('/', [VisitController::class, 'store']);
         Route::put('/{id}', [VisitController::class, 'update']);
         Route::delete('/{id}', [VisitController::class, 'destroy']);
     });

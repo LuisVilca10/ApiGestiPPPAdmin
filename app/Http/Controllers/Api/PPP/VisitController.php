@@ -61,19 +61,48 @@ class VisitController
 
     public function store(StoreVisitRequest $request)
     {
-        $user     = Auth::user();
-        $practice = Practice::find($request->practice_id);
+        $practice = Practice::with('documents')->find($request->practice_id);
 
-        if ($user->hasRole('Docente') && (int) $practice->docente_id !== $user->id) {
-            return $this->errorResponse('No tienes asignada esta práctica para supervisión', 403);
+        // La práctica debe estar aprobada
+        if ($practice->status !== 'Aprobado') {
+            return $this->errorResponse('La práctica debe estar aprobada para programar visitas.', 422);
         }
 
-        $data            = $request->validated();
-        $data['user_id'] = $user->id;
+        // El Plan de Prácticas debe estar aprobado
+        $planAprobado = $practice->documents()
+            ->where('document_type', 'Plan de Practicas')
+            ->where('document_status', 'Aprobado')
+            ->exists();
+
+        if (!$planAprobado) {
+            return $this->errorResponse('El Plan de Prácticas debe estar aprobado antes de programar visitas.', 422);
+        }
+
+        // Debe tener un Docente asignado
+        if (!$practice->docente_id) {
+            return $this->errorResponse('Debes asignar un Docente a la práctica antes de programar visitas.', 422);
+        }
+
+        // Solo 1 visita por tipo (Inicio, Medio, Final)
+        $tipoExiste = Visit::where('practice_id', $practice->id)
+            ->where('visit_type', $request->visit_type)
+            ->exists();
+
+        if ($tipoExiste) {
+            return $this->errorResponse("Ya existe una visita de tipo \"{$request->visit_type}\" para esta práctica.", 422);
+        }
+
+        $data                 = $request->validated();
+        $data['user_id']      = $practice->docente_id; // asignado automáticamente al docente de la práctica
+        $data['visit_status'] = 'Programada';
 
         $visit = Visit::create($data);
 
-        return $this->successResponse($visit->toArray(), 'Visita registrada correctamente', 201);
+        return $this->successResponse(
+            $visit->load(['practice:id,empresa_id', 'practice.empresa:id,name_empresa', 'user:id,name,last_name,code'])->toArray(),
+            'Visita programada correctamente.',
+            201
+        );
     }
 
     public function update(UpdateVisitRequest $request, $id)

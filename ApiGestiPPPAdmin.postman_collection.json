@@ -827,6 +827,7 @@
 
     {
       "name": "10 - Visits",
+      "description": "Encargado programa visitas. Docente las realiza y actualiza.",
       "item": [
         {
           "name": "Listar Visitas",
@@ -853,27 +854,68 @@
           }
         },
         {
-          "name": "Crear Visita (Docente)",
+          "name": "Programar Visita Inicio (Encargado)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/visits", "host": ["{{base_url}}"], "path": ["visits"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"practice_id\": 1,\n  \"visit_date\": \"2025-10-15 10:00:00\",\n  \"visit_type\": \"Inicio\",\n  \"visit_notes\": \"El estudiante mostró buena disposición. Se revisaron las actividades del plan de trabajo.\",\n  \"visit_result\": 16.50,\n  \"visit_status\": \"Realizada\"\n}",
+              "raw": "{\n  \"practice_id\": 1,\n  \"visit_date\": \"2025-10-15 10:00:00\",\n  \"visit_type\": \"Inicio\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Requiere: Plan de Prácticas aprobado y Docente asignado. El sistema auto-asigna el Docente de la práctica y marca estado como Programada."
+          }
+        },
+        {
+          "name": "Programar Visita Medio (Encargado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/visits", "host": ["{{base_url}}"], "path": ["visits"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"practice_id\": 1,\n  \"visit_date\": \"2025-11-15 10:00:00\",\n  \"visit_type\": \"Medio\"\n}",
               "options": { "raw": { "language": "json" } }
             }
           }
         },
         {
-          "name": "Actualizar Visita (Docente)",
+          "name": "Programar Visita Final (Encargado)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/visits", "host": ["{{base_url}}"], "path": ["visits"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"practice_id\": 1,\n  \"visit_date\": \"2025-12-15 10:00:00\",\n  \"visit_type\": \"Final\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Realizar Visita (Docente)",
           "request": {
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"visit_notes\": \"Notas actualizadas tras segunda revisión.\",\n  \"visit_result\": 17.00,\n  \"visit_status\": \"Realizada\"\n}",
+              "raw": "{\n  \"visit_status\": \"Realizada\",\n  \"visit_notes\": \"El estudiante mostró buena disposición. Se revisaron las actividades del plan de trabajo conforme a lo programado.\",\n  \"visit_result\": 16.50\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Docente actualiza la visita después de realizarla. Luego debe subir la Ficha Visita en /practice/upload-document con el visit_id."
+          }
+        },
+        {
+          "name": "Cancelar Visita (Docente)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/visits/1", "host": ["{{base_url}}"], "path": ["visits", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visit_status\": \"Cancelada\",\n  \"visit_notes\": \"El estudiante no se encontraba en la empresa en la fecha programada.\"\n}",
               "options": { "raw": { "language": "json" } }
             }
           }
