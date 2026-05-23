@@ -126,6 +126,7 @@ Route::prefix('practice')->middleware(['auth:api', 'role:Admin|Estudiante|Encarg
     Route::get('/practicesforselect', [PracticeController::class, 'practicesforselect']);
     Route::get('/template/plan-practicas', [PracticeController::class, 'downloadPlanTemplate']);
     Route::get('/documents/{id}', [PracticeController::class, 'documentsByPractice']);
+    Route::get('/{id}/flujo', [PracticeController::class, 'flujo']);
     Route::get('/{id}', [PracticeController::class, 'show']);
     // Solo Estudiante puede registrar su práctica
     Route::middleware('role:Admin|Estudiante')->post('/', [PracticeController::class, 'store']);

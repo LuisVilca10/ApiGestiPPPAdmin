@@ -280,6 +280,121 @@ class PracticeController
         );
     }
 
+    public function flujo($id)
+    {
+        $practice = Practice::with(['documents', 'visits', 'docente:id,name,last_name'])->find($id);
+
+        if (!$practice) {
+            return $this->errorResponse('Práctica no encontrada', 404);
+        }
+
+        $docs = $practice->documents->groupBy('document_type');
+
+        // Estado de cada visita
+        $visitasPorTipo = $practice->visits->keyBy('visit_type');
+
+        $pasos = [
+            [
+                'orden'         => 1,
+                'documento'     => 'Carta Presentacion',
+                'responsable'   => 'Sistema',
+                'descripcion'   => 'Generada automáticamente al aprobar la práctica',
+                'bloqueado_por' => null,
+            ],
+            [
+                'orden'         => 2,
+                'documento'     => 'Carta Aceptacion',
+                'responsable'   => 'Estudiante',
+                'descripcion'   => 'La empresa acepta al estudiante',
+                'bloqueado_por' => 'Carta Presentacion',
+            ],
+            [
+                'orden'         => 3,
+                'documento'     => 'Plan de Practicas',
+                'responsable'   => 'Estudiante',
+                'descripcion'   => 'Plan de actividades del período de prácticas',
+                'bloqueado_por' => 'Carta Aceptacion',
+            ],
+            [
+                'orden'         => '4a',
+                'documento'     => 'Ficha Visita',
+                'responsable'   => 'Docente',
+                'descripcion'   => 'Tres fichas de visita (Inicio, Medio, Final)',
+                'bloqueado_por' => 'Plan de Practicas',
+            ],
+            [
+                'orden'         => '4b',
+                'documento'     => 'Informe Jefe Empresa',
+                'responsable'   => 'Estudiante',
+                'descripcion'   => 'Informe firmado por el jefe inmediato en la empresa',
+                'bloqueado_por' => 'Plan de Practicas',
+            ],
+            [
+                'orden'         => 5,
+                'documento'     => 'Informe de Practicas',
+                'responsable'   => 'Estudiante',
+                'descripcion'   => 'Informe final (requiere 3 fichas + informe jefe aprobados)',
+                'bloqueado_por' => ['Ficha Visita x3', 'Informe Jefe Empresa'],
+            ],
+            [
+                'orden'         => 6,
+                'documento'     => 'Constancia de Practica',
+                'responsable'   => 'Estudiante',
+                'descripcion'   => 'Constancia de horas emitida por la empresa (cierra la práctica)',
+                'bloqueado_por' => 'Informe de Practicas',
+            ],
+        ];
+
+        $fichasAprobadas = ($docs->get('Ficha Visita') ?? collect())
+            ->where('document_status', 'Aprobado')->count();
+
+        $resultado = [];
+        foreach ($pasos as $paso) {
+            $tipo        = $paso['documento'];
+                $docsDelTipo = $docs->get($tipo) ?? collect();
+
+            if ($tipo === 'Ficha Visita') {
+                $detalle = collect(['Inicio', 'Medio', 'Final'])->map(function ($subtipo) use ($visitasPorTipo, $docs) {
+                    $visita   = $visitasPorTipo->get($subtipo);
+                    $ficha    = ($docs->get('Ficha Visita') ?? collect())
+                        ->firstWhere(fn($d) => $visita && $d->visit_id === $visita->id);
+
+                    return [
+                        'subtipo'        => $subtipo,
+                        'visita_id'      => $visita?->id,
+                        'visita_fecha'   => $visita?->visit_date,
+                        'visita_estado'  => $visita?->visit_status ?? 'Sin programar',
+                        'ficha_estado'   => $ficha?->document_status ?? 'Pendiente',
+                        'ficha_id'       => $ficha?->id,
+                    ];
+                });
+
+                $resultado[] = array_merge($paso, [
+                    'estado'          => $fichasAprobadas >= 3 ? 'Completo' : ($fichasAprobadas > 0 ? 'En progreso' : 'Pendiente'),
+                    'fichas_aprobadas'=> $fichasAprobadas,
+                    'detalle_visitas' => $detalle,
+                ]);
+                continue;
+            }
+
+            $ultimo = $docsDelTipo->sortByDesc('created_at')->first();
+
+            $resultado[] = array_merge($paso, [
+                'estado'       => $ultimo?->document_status ?? 'Pendiente',
+                'documento_id' => $ultimo?->id,
+                'subido_en'    => $ultimo?->created_at,
+            ]);
+        }
+
+        return $this->successResponse([
+            'practice_id'      => $practice->id,
+            'practice_status'  => $practice->status,
+            'docente'          => $practice->docente,
+            'sugerencia_visitas' => $this->practiceService->sugerirFechasVisitas($practice),
+            'pasos'            => $resultado,
+        ]);
+    }
+
     public function show($id)
     {
         $practice = Practice::with('empresa', 'user:id,name,last_name,code,trato,career,dni,phone,academic_cycle')->find($id);
