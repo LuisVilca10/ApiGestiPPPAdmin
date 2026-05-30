@@ -115,6 +115,17 @@ class ModuleSeeder extends Seeder
                 'link'             => '/homeScreen/seguimiento/validacion-documentos',
                 'parent_module_id' => 3,
             ],
+            [
+                'title'            => 'Visitas de Supervisión',
+                'code'             => 'VIS-01',
+                'subtitle'         => 'Programación y seguimiento de visitas a empresas',
+                'type'             => 'basic',
+                'icon'             => 'heroicons_outline:map-pin',
+                'status'           => 1,
+                'moduleOrder'      => 4,
+                'link'             => '/homeScreen/seguimiento/visitas',
+                'parent_module_id' => 3,
+            ],
 
             // ── 4. CONFIGURACIÓN (parent_module_id: 4) ────────────────────
             [
