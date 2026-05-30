@@ -25,10 +25,17 @@ class DocumentController
         $search       = $request->input('search');
         $isAdmin      = Auth::user()->hasRole('Admin');
 
-        $query = Document::with(['practice' => fn($q) => $q->select('id', 'empresa_id')->with('empresa:id,name_empresa')]);
+        $user  = Auth::user();
+        $query = Document::with(['practice' => fn($q) => $q->select('id', 'empresa_id', 'user_id', 'docente_id')->with('empresa:id,name_empresa')]);
 
         if (!$isAdmin) {
-            $query->whereHas('practice', fn($q) => $q->where('user_id', Auth::id()));
+            $query->whereHas('practice', function ($q) use ($user) {
+                if ($user->hasRole('Docente')) {
+                    $q->where('docente_id', $user->id);
+                } else {
+                    $q->where('user_id', $user->id);
+                }
+            });
         }
 
         if ($search) {
@@ -58,7 +65,10 @@ class DocumentController
             return $this->errorResponse('El documento ya está aprobado', 422);
         }
 
-        $document->update(['document_status' => 'Aprobado']);
+        $document->update([
+            'document_status'  => 'Aprobado',
+            'rejection_reason' => null,
+        ]);
 
         $this->asignarHorasSiCompleto($document->practice);
 
@@ -76,7 +86,14 @@ class DocumentController
             return $this->errorResponse('Documento no encontrado', 404);
         }
 
-        $document->update(['document_status' => 'Rechazado']);
+        $request->validate([
+            'rejection_reason' => 'required|string|max:1000',
+        ]);
+
+        $document->update([
+            'document_status'  => 'Rechazado',
+            'rejection_reason' => $request->rejection_reason,
+        ]);
 
         return $this->successResponse(
             (new DocumentResource($document->fresh()->load('practice')))->resolve(),

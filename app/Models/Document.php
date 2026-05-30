@@ -49,6 +49,7 @@ class Document extends Model
         'document_name',
         'document_path',
         'document_status',
+        'rejection_reason',
         'practice_id',
         'visit_id',
     ];

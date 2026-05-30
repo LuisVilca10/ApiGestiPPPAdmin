@@ -190,7 +190,7 @@ class PracticeController
             ['bold' => true, 'size' => 18],
             $centerStyle
         );
-        $portada->addText('FACULTAD DE INGENIERÍA Y ARQUITECTURA',
+        $portada->addText('FACULTAD DE CIENCIAS EMPRESARIALES',
             ['bold' => true, 'size' => 13],
             $centerStyle
         );
